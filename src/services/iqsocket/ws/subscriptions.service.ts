@@ -62,4 +62,48 @@ export class SubscriptionsService {
   private generateRequestId(): string {
     return `sub_${++this.requestCounter}_${Date.now()}`;
   }
+
+  unsubscribeCandles(activeId: number, size: number): boolean {
+    const key = KeyUtils.subscriptionKey(activeId, size);
+    
+    if (!this.subscriptions.has(key)) {
+      return false; // Não estava subscrito
+    }
+
+    const unsubscribeMessage = {
+      name: 'unsubscribeMessage',
+      msg: {
+        name: 'candle-generated',
+        params: {
+          routingFilters: {
+            active_id: activeId,
+            size: size
+          }
+        }
+      },
+      request_id: this.generateRequestId()
+    };
+
+    this.connectionService.send(unsubscribeMessage);
+    this.subscriptions.delete(key);
+    
+    IQSocketLogger.logWsMessage('UNSUBSCRIBE', `candle-generated ${activeId}:${size}`);
+    return true;
+  }
+
+  getActiveSubscriptions(activeId: number): number[] {
+    const sizes: number[] = [];
+    for (const key of this.subscriptions) {
+      const [subActiveId, size] = key.split(':').map(Number);
+      if (subActiveId === activeId) {
+        sizes.push(size);
+      }
+    }
+    return sizes;
+  }
+
+  hasSubscription(activeId: number, size: number): boolean {
+    const key = KeyUtils.subscriptionKey(activeId, size);
+    return this.subscriptions.has(key);
+  }
 }

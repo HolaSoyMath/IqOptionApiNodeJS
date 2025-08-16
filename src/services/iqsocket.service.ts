@@ -226,4 +226,37 @@ export class IQSocketService extends EventEmitter {
   private generateRequestId(): string {
     return `req_${++this.requestCounter}_${Date.now()}`;
   }
+
+  /**
+   * Remove subscrição de candles ao vivo
+   */
+  async unsubscribeFromLiveCandles(activeId: number, sizes?: number[]): Promise<{ unsubscribed: number[]; notSubscribed: number[]; allSizes: number[] }> {
+    if (!this.connectionService.isOpen() || !this.authService.isAuthenticated()) {
+      throw new Error('Not connected or authenticated');
+    }
+
+    // Se sizes não fornecido, obter todas as subscrições ativas para este activeId
+    const targetSizes = sizes || this.subscriptionsService.getActiveSubscriptions(activeId);
+    
+    if (targetSizes.length === 0) {
+      return { unsubscribed: [], notSubscribed: [], allSizes: [] };
+    }
+
+    const unsubscribed: number[] = [];
+    const notSubscribed: number[] = [];
+
+    for (const size of targetSizes) {
+      const wasUnsubscribed = this.subscriptionsService.unsubscribeCandles(activeId, size);
+      
+      if (wasUnsubscribed) {
+        unsubscribed.push(size);
+        // Limpar dados do store para este ativo/tamanho
+        this.candlesStore.deleteCurrent(activeId, size);
+      } else {
+        notSubscribed.push(size);
+      }
+    }
+
+    return { unsubscribed, notSubscribed, allSizes: targetSizes };
+  }
 }

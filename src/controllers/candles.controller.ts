@@ -229,4 +229,148 @@ export class CandlesController {
       res.status(500).json(response);
     }
   }
+
+  /**
+   * POST /api/candles/unsubscribe
+   * Remove subscrições de candles ao vivo para múltiplos mercados
+   */
+  static async unsubscribeCandles(req: Request, res: Response): Promise<void> {
+    try {
+      const { active_ids, sizes } = req.body;
+      
+      // Validar active_ids
+      if (!Array.isArray(active_ids) || active_ids.length === 0) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'active_ids deve ser um array com pelo menos um elemento',
+          timestamp: new Date().toISOString()
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const invalidActiveIds = active_ids.filter(id => !Number.isInteger(id) || id <= 0);
+      if (invalidActiveIds.length > 0) {
+        const response: ApiResponse = {
+          success: false,
+          message: `IDs de mercados inválidos: ${invalidActiveIds.join(', ')}`,
+          timestamp: new Date().toISOString()
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Validar sizes se fornecido
+      if (sizes !== undefined) {
+        if (!Array.isArray(sizes) || sizes.some(s => !Number.isInteger(s) || s <= 0)) {
+          const response: ApiResponse = {
+            success: false,
+            message: 'sizes deve ser um array de números inteiros positivos',
+            timestamp: new Date().toISOString()
+          };
+          res.status(400).json(response);
+          return;
+        }
+      }
+
+      console.log(`[CANDLES] Removendo subscrições para mercados ${active_ids.join(', ')}${sizes ? ` com tamanhos: ${sizes.join(', ')}` : ' (todos os tamanhos)'}`);
+      
+      const socketService = CandlesController.getSocketService();
+      
+      // Verificar se está conectado
+      if (!socketService.getStatus().connected || !socketService.getStatus().authenticated) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Serviço não está conectado ou autenticado',
+          timestamp: new Date().toISOString()
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Processar cada mercado
+      const results: Array<{
+        active_id: number;
+        unsubscribed: number[];
+        not_subscribed: number[];
+        error?: string;
+      }> = [];
+
+      let hasErrors = false;
+
+      for (const activeId of active_ids) {
+        try {
+          const result = await socketService.unsubscribeFromLiveCandles(activeId, sizes);
+          
+          results.push({
+            active_id: activeId,
+            unsubscribed: result.unsubscribed,
+            not_subscribed: result.notSubscribed
+          });
+
+          console.log(`[CANDLES] Mercado ${activeId} - Removidas: ${result.unsubscribed.join(', ') || 'nenhuma'}`);
+        } catch (error) {
+          hasErrors = true;
+          const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+          
+          results.push({
+            active_id: activeId,
+            unsubscribed: [],
+            not_subscribed: [],
+            error: errorMessage
+          });
+
+          console.error(`[CANDLES] Erro ao remover subscrições do mercado ${activeId}:`, error);
+        }
+      }
+
+      // Calcular totais
+      const totalUnsubscribed = results.reduce((sum, r) => sum + r.unsubscribed.length, 0);
+      const totalNotSubscribed = results.reduce((sum, r) => sum + r.not_subscribed.length, 0);
+      const totalErrors = results.filter(r => r.error).length;
+
+      // Determinar status da resposta
+      let statusCode = 200;
+      let message = 'Unsubscribed successfully';
+
+      if (totalErrors > 0) {
+        statusCode = hasErrors && totalUnsubscribed === 0 ? 500 : 207;
+        message = `Processamento concluído com ${totalErrors} erro(s)`;
+      } else if (totalUnsubscribed === 0 && totalNotSubscribed > 0) {
+        message = 'Already unsubscribed';
+      }
+
+      const response: ApiResponse = {
+        success: totalErrors === 0,
+        message,
+        data: {
+          requested: {
+            active_ids,
+            sizes: sizes || 'all'
+          },
+          summary: {
+            total_markets: active_ids.length,
+            unsubscribed_count: totalUnsubscribed,
+            not_subscribed_count: totalNotSubscribed,
+            errors_count: totalErrors
+          },
+          results
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      res.status(statusCode).json(response);
+      
+    } catch (error) {
+      console.error('[CANDLES] Erro ao remover subscrições:', error);
+      
+      const response: ApiResponse = {
+        success: false,
+        message: 'Erro interno ao remover subscrições de candles',
+        timestamp: new Date().toISOString()
+      };
+
+      res.status(500).json(response);
+    }
+  }
 }

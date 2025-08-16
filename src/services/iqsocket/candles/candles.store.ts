@@ -62,6 +62,16 @@ export class CandlesStore {
     return this.current.delete(key);
   }
 
+  deleteHistory(activeId: number, size: number): boolean {
+    const key = KeyUtils.candleKey(activeId, size);
+    return this.history.delete(key);
+  }
+
+  clearActiveData(activeId: number, size: number): void {
+    this.deleteCurrent(activeId, size);
+    this.deleteHistory(activeId, size);
+  }
+
   status(): { historyCount: number; currentKeys: string[] } {
     const historyCount = Array.from(this.history.values())
       .reduce((total, candles) => total + candles.length, 0);
