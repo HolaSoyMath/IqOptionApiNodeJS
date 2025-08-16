@@ -183,7 +183,7 @@ export class IQSocketService extends EventEmitter {
 
   /**
    * Obtém histórico de candles
-   * Mantém compatibilidade com a interface original
+   * Usado em /api/candles/history - mantido
    */
   getHistory(activeId: number, size: number): CandleData[] {
     return this.candlesStore.getHistory(activeId, size);

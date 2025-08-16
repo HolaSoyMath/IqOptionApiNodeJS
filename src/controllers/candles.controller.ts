@@ -3,16 +3,13 @@ import { IQSocketService } from '../services/iqsocket.service';
 import { ApiResponse } from '../types/response.types';
 
 export class CandlesController {
-  private static getSocketService(): IQSocketService {
-    return IQSocketService.getInstance();
-  }
+  private static socketService: IQSocketService | null = null;
 
-  private static extractSsid(req: Request): string | null {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.substring(7);
+  private static getSocketService(): IQSocketService {
+    if (!this.socketService) {
+      this.socketService = IQSocketService.getInstance();
     }
-    return process.env.IQ_SSID || null;
+    return this.socketService;
   }
 
   private static validateActiveIds(actives: any[]): { valid: boolean; message?: string } {
@@ -28,50 +25,40 @@ export class CandlesController {
     return { valid: true };
   }
 
-  private static validateSizes(sizes: any[]): { valid: boolean; message?: string } {
-    if (!Array.isArray(sizes) || sizes.some(s => !Number.isInteger(s) || s <= 0)) {
-      return { valid: false, message: 'Tamanhos de candles inválidos' };
-    }
-    return { valid: true };
-  }
-
   /**
    * POST /api/candles/collect
    * Inicia coleta de candles para múltiplos ativos
    */
   static async collectCandles(req: Request, res: Response): Promise<void> {
     try {
-      // Extrair SSID
-      const ssid = CandlesController.extractSsid(req);
-      if (!ssid) {
-        const response: ApiResponse = {
-          success: false,
-          message: 'SSID é obrigatório. Forneça via header Authorization: Bearer <SSID> ou variável de ambiente IQ_SSID',
-          timestamp: new Date().toISOString()
-        };
-        res.status(401).json(response);
-        return;
-      }
-
-      // Validar parâmetros
-      const { actives, sizes = [60, 300, 900] } = req.body;
+      const { actives, sizes = [60], ssid } = req.body;
       
-      const activesValidation = CandlesController.validateActiveIds(actives);
-      if (!activesValidation.valid) {
+      // Validar entrada
+      const validation = CandlesController.validateActiveIds(actives);
+      if (!validation.valid) {
         const response: ApiResponse = {
           success: false,
-          message: activesValidation.message!,
+          message: validation.message!,
           timestamp: new Date().toISOString()
         };
         res.status(400).json(response);
         return;
       }
 
-      const sizesValidation = CandlesController.validateSizes(sizes);
-      if (!sizesValidation.valid) {
+      if (!Array.isArray(sizes) || sizes.some(s => !Number.isInteger(s) || s <= 0)) {
         const response: ApiResponse = {
           success: false,
-          message: sizesValidation.message!,
+          message: 'Tamanhos de candle inválidos',
+          timestamp: new Date().toISOString()
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (!ssid || typeof ssid !== 'string') {
+        const response: ApiResponse = {
+          success: false,
+          message: 'SSID é obrigatório para autenticação',
           timestamp: new Date().toISOString()
         };
         res.status(400).json(response);
@@ -121,7 +108,7 @@ export class CandlesController {
           requested: { actives, sizes },
           subscribed,
           errors: errors.length > 0 ? errors : undefined,
-          note: 'Os candles serão recebidos via WebSocket em tempo real. Use /api/candles/live para acessar os dados.'
+          note: 'Os candles serão recebidos via WebSocket em tempo real. Use /api/candles/history para acessar os dados históricos.'
         },
         timestamp: new Date().toISOString()
       };
@@ -133,95 +120,6 @@ export class CandlesController {
       const response: ApiResponse = {
         success: false,
         message: 'Erro interno ao iniciar coleta de candles',
-        timestamp: new Date().toISOString()
-      };
-
-      res.status(500).json(response);
-    }
-  }
-
-  /**
-   * GET /api/candles/status
-   * Obtém status da coleta de candles
-   */
-  static async getCollectionStatus(req: Request, res: Response): Promise<void> {
-    try {
-      const socketService = CandlesController.getSocketService();
-      const status = socketService.getStatus();
-
-      const response: ApiResponse = {
-        success: true,
-        message: 'Status da coleta de candles',
-        data: status,
-        timestamp: new Date().toISOString()
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      console.error('[CANDLES] Erro ao obter status:', error);
-      
-      const response: ApiResponse = {
-        success: false,
-        message: 'Erro interno ao obter status',
-        timestamp: new Date().toISOString()
-      };
-
-      res.status(500).json(response);
-    }
-  }
-
-  /**
-   * GET /api/candles/live/:active_id?size=60
-   * Obtém candle atual para um ativo específico
-   */
-  static async getLiveCandles(req: Request, res: Response): Promise<void> {
-    try {
-      const activeId = parseInt(req.params.active_id);
-      const size = parseInt(req.query.size as string) || 60;
-      
-      if (!Number.isInteger(activeId) || activeId <= 0) {
-        const response: ApiResponse = {
-          success: false,
-          message: 'ID do ativo inválido',
-          timestamp: new Date().toISOString()
-        };
-        res.status(400).json(response);
-        return;
-      }
-
-      if (!Number.isInteger(size) || size <= 0) {
-        const response: ApiResponse = {
-          success: false,
-          message: 'Tamanho do candle inválido',
-          timestamp: new Date().toISOString()
-        };
-        res.status(400).json(response);
-        return;
-      }
-
-      const socketService = CandlesController.getSocketService();
-      const currentCandle = socketService.getCurrentCandle(activeId, size);
-
-      const response: ApiResponse = {
-        success: true,
-        message: `Candle atual para ativo ${activeId} (tamanho ${size}s)`,
-        data: {
-          active_id: activeId,
-          size: size,
-          candle: currentCandle,
-          has_current: !!currentCandle,
-          timestamp: currentCandle ? new Date(currentCandle.from * 1000).toISOString() : null
-        },
-        timestamp: new Date().toISOString()
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      console.error('[CANDLES] Erro ao obter candle atual:', error);
-      
-      const response: ApiResponse = {
-        success: false,
-        message: 'Erro interno ao obter candle atual',
         timestamp: new Date().toISOString()
       };
 
@@ -271,7 +169,7 @@ export class CandlesController {
 
       const socketService = CandlesController.getSocketService();
       const fullHistory = socketService.getHistory(activeId, size);
-      
+
       // Aplicar limite (últimos N candles)
       const history = fullHistory.slice(-limit);
 
