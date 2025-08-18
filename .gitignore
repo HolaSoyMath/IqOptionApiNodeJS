@@ -68,3 +68,5 @@ prisma/migrations/
 
 # TypeScript
 *.tsbuildinfo
+
+*.zip

@@ -109,3 +109,20 @@ export interface BinaryTurboInit {
   binary: Array<BinTurboLite>;
   turbo: Array<BinTurboLite>;
 }
+
+
+// Nova interface para o endpoint /api/markets/binary
+export interface BinaryMarketResponse {
+  iq_active_id: number;
+  name: string;
+  type: "binary";
+  subtype?: "binary" | "turbo";
+  payout_percent: number | null;
+  is_open?: boolean;
+}
+
+// Interface para o estado do cache de mercados binários
+export interface BinaryOpenState {
+  subtype: "binary" | "turbo";
+  is_open: boolean;
+}

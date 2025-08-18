@@ -138,8 +138,6 @@ export class GetAllMarketsUseCase {
 
   // Method to handle incoming initialization data
   public handleInitializationData(data: any): void {
-    console.log('[GetAllMarkets] Handling initialization data:', data);
-    
     // Find and resolve pending requests
     for (const [requestId, pending] of this.pendingInitRequests.entries()) {
       clearTimeout(pending.timeout);
@@ -151,11 +149,6 @@ export class GetAllMarketsUseCase {
 
   // Method to handle incoming instruments data
   public handleInstrumentsData(data: any, type?: string): void {
-    console.log(`[GetAllMarkets] Handling instruments data for type: ${type}`, {
-      type: data?.type || type,
-      instrumentsCount: data?.instruments?.length || 0,
-      hasInstruments: !!data?.instruments
-    });
     
     // Extract type from data if not provided
     const instrumentType = type || data?.type;

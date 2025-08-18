@@ -7,7 +7,7 @@ export class MarketDataMapper {
    */
   static mapBinaryData(initData: InitializationData): { binary: BinaryMarket[], turbo: BinaryMarket[] } {
     console.log('[MAPPER] Processando dados binários');
-    console.log('[MAPPER] Dados recebidos:', JSON.stringify(initData, null, 2)); // ← Adicionar este log
+    // console.log('[MAPPER] Dados recebidos:', JSON.stringify(initData, null, 2)); // ← Adicionar este log
   
     const binaryMarkets: BinaryMarket[] = [];
     const turboMarkets: BinaryMarket[] = [];

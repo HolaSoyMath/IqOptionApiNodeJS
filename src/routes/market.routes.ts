@@ -61,8 +61,8 @@ router.get('/', MarketController.getAllMarkets);
  * @swagger
  * /api/markets/binary:
  *   get:
- *     summary: Obter mercados binários
- *     description: Retorna uma lista de mercados disponíveis para opções binárias
+ *     summary: Obter mercados de opções binárias
+ *     description: Retorna uma lista agregada de mercados binary-option e turbo-option com informações de payout
  *     tags: [Markets]
  *     security:
  *       - BearerAuth: []
@@ -77,36 +77,47 @@ router.get('/', MarketController.getAllMarkets);
  *                 - type: object
  *                   properties:
  *                     data:
- *                       type: object
- *                       properties:
- *                         binary:
- *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/BinaryMarket'
- *                         turbo:
- *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/BinaryMarket'
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           iq_active_id:
+ *                             type: number
+ *                             description: ID do ativo na IQ Option
+ *                           name:
+ *                             type: string
+ *                             description: Nome amigável do ativo
+ *                           type:
+ *                             type: string
+ *                             enum: ["binary"]
+ *                             description: Tipo normalizado
+ *                           subtype:
+ *                             type: string
+ *                             enum: ["binary", "turbo"]
+ *                             description: Subtipo do mercado
+ *                           payout_percent:
+ *                             type: number
+ *                             nullable: true
+ *                             description: Percentual de payout (ex 85)
+ *                           is_open:
+ *                             type: boolean
+ *                             description: Se o mercado está aberto
  *             example:
  *               success: true
- *               message: "Mercados binários obtidos com sucesso"
+ *               message: "Mercados binários obtidos com sucesso (2 mercados)"
  *               data:
- *                 binary:
- *                   - id: 1
- *                     name: "EURUSD"
- *                     enabled: true
- *                     is_suspended: false
- *                     type: "binary"
- *                     profit_commission: 85
- *                     is_open: true
- *                 turbo:
- *                   - id: 2
- *                     name: "GBPUSD"
- *                     enabled: true
- *                     is_suspended: false
- *                     type: "turbo"
- *                     profit_commission: 82
- *                     is_open: true
+ *                 - iq_active_id: 1
+ *                   name: "EURUSD"
+ *                   type: "binary"
+ *                   subtype: "turbo"
+ *                   payout_percent: 87
+ *                   is_open: true
+ *                 - iq_active_id: 4
+ *                   name: "GBPUSD"
+ *                   type: "binary"
+ *                   subtype: "binary"
+ *                   payout_percent: 82
+ *                   is_open: true
  *               timestamp: "2024-01-15T10:30:00.000Z"
  *       401:
  *         description: Token não fornecido ou inválido

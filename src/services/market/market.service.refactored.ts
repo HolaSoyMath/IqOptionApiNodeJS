@@ -3,7 +3,7 @@ import { IQWebSocketClient } from './ws/iq-ws.client';
 import { CacheService } from './cache/cache.service';
 import { SessionService } from './auth/session.service';
 import { MarketDataMapper } from './mappers/market.mappers';
-import { WSResponse } from '../../types/iq-ws.types'; // Add this import
+import { WSResponse } from '../../types/iq-ws.types';
 import { 
   GetBinaryMarketsUseCase, 
   GetAllMarketsUseCase, 
@@ -15,6 +15,7 @@ import { MarketError } from './errors/market.errors';
 import { config } from '../../config/app.config';
 import { GetSimpleMarketsUseCase } from './use-cases/get-simple-markets.use-case';
 import { SimpleMarketData } from '../../types/market.types';
+import { marketCache } from './cache/market-cache';
 
 /**
  * Serviço principal para gerenciamento de mercados da IQ Option
@@ -167,23 +168,90 @@ export class MarketService {
   }
 
   private handleInitializationData(message: WSResponse): void {
-    console.log('[WS] Processando dados de inicialização:', message);
-    
-    // Notify the use case about the received data
+
+    const data = (message as any)?.msg || (message as any)?.data || message;
+    try {
+      // BINÁRIAS
+      const binaryActives = data?.binary?.actives || {};
+      const nameMap: Record<number, string> = {};
+      const commissions: Record<number, number> = {};
+
+      for (const [idStr, active] of Object.entries<any>(binaryActives)) {
+        const activeId = Number(idStr);
+        const rawName = active?.name ?? active?.asset ?? active?.ticker ?? active?.symbol ?? String(activeId);
+        const name = typeof rawName === 'string' && rawName.startsWith('front.') ? rawName.slice(6) : rawName;
+        nameMap[activeId] = name;
+
+        const commission = active?.option?.profit?.commission;
+        if (typeof commission === 'number') commissions[activeId] = commission;
+
+        const isOpen = !!(active?.enabled && !active?.is_suspended);
+        marketCache.updateBinaryOpenState(activeId, { subtype: 'binary', is_open: isOpen });
+      }
+
+      // TURBO
+      const turboActives = data?.turbo?.actives || {};
+      for (const [idStr, active] of Object.entries<any>(turboActives)) {
+        const activeId = Number(idStr);
+        const rawName = active?.name ?? active?.asset ?? active?.ticker ?? active?.symbol ?? String(activeId);
+        const name = typeof rawName === 'string' && rawName.startsWith('front.') ? rawName.slice(6) : rawName;
+        nameMap[activeId] = name;
+
+        const commission = active?.option?.profit?.commission;
+        if (typeof commission === 'number') commissions[activeId] = commission;
+
+        const isOpen = !!(active?.enabled && !active?.is_suspended);
+        marketCache.updateBinaryOpenState(activeId, { subtype: 'turbo', is_open: isOpen });
+      }
+
+      if (Object.keys(nameMap).length) {
+        marketCache.updateNames(nameMap);
+        console.log(`[CACHE] names += ${Object.keys(nameMap).length}`);
+      }
+      if (Object.keys(commissions).length) {
+        marketCache.updateBinaryCommissions(commissions);
+        console.log(`[CACHE] binaryCommissions += ${Object.keys(commissions).length}`);
+      }
+    } catch (err) {
+      console.warn('[CACHE] Falha ao aplicar initialization-data no cache:', err);
+    }
+
     this.getAllMarketsUseCase.handleInitializationData(message.msg);
   }
 
   private handleInstrumentsData(message: WSResponse): void {
-    console.log('[WS] Processando dados de instrumentos:', message);
-    
-    // Extract the type from the message
-    const instrumentType = message.msg?.type;
-    
+
+    try {
+      const data = (message as any)?.msg || (message as any)?.data || message;
+      const instrumentType = data?.type;
+
+      if (instrumentType === 'binary-option' || instrumentType === 'turbo-option') {
+        const subtype = instrumentType === 'binary-option' ? 'binary' : 'turbo';
+        const list = Array.isArray(data?.instruments) ? data.instruments : [];
+
+        let count = 0;
+        for (const instr of list) {
+          const activeId = Number(instr?.active_id ?? instr?.id);
+          if (!Number.isFinite(activeId)) continue;
+
+          let isOpen = !!instr?.enabled;
+          if (!isOpen && Array.isArray(instr?.schedule)) {
+            const now = Date.now() / 1000;
+            isOpen = instr.schedule.some((w: any) => now >= w.open && now <= w.close);
+          }
+
+          marketCache.updateBinaryOpenState(activeId, { subtype, is_open: isOpen });
+          count++;
+        }
+        console.log(`[CACHE] binaryOpenState (${subtype}) += ${count}`);
+      }
+    } catch (err) {
+      console.warn('[CACHE] Falha ao aplicar instruments no cache:', err);
+    }
+
+    const instrumentType = (message as any)?.msg?.type;
     if (instrumentType) {
-      console.log(`[WS] Tipo de instrumento recebido: ${instrumentType}`);
-      
-      // Notify the use case about the received instruments data
-      this.getAllMarketsUseCase.handleInstrumentsData(message.msg, instrumentType);
+      this.getAllMarketsUseCase.handleInstrumentsData((message as any).msg, instrumentType);
     } else {
       console.warn('[WS] Mensagem de instrumentos sem tipo:', message);
     }

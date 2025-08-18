@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { IQWSClient, MarketLite } from '../services/iq/ws-client';
 import { MarketService } from '../services/market.service';
+import { MarketService as RefactoredMarketService } from '../services/market/market.service.refactored';
 import { ApiResponse } from '../types/response.types';
 import { BinaryMarket, BinaryTurboInit } from '../types/market.types';
+import { marketCache } from '../services/market/cache/market-cache';
+import { BinaryMarketResponse } from '../types/market.types';
 
 export class MarketController {
   // Cache global para evitar múltiplas conexões
@@ -142,9 +145,18 @@ export class MarketController {
     }
   }
 
+  /**
+   * Função utilitária para arredondar payout
+   */
+  private static roundPayout(x?: number): number | null {
+    if (typeof x !== "number" || Number.isNaN(x)) return null;
+    return Math.round(x);
+  }
+
+  // Endpoint GET /api/markets/binary atualizado
   static async getBinaryMarkets(req: Request, res: Response): Promise<void> {
     try {
-      const ssid = req.headers.authorization?.replace('Bearer ', '') || process.env.IQ_SSID;
+      const ssid = req.headers.authorization?.replace('Bearer ', '');
       
       if (!ssid) {
         const response: ApiResponse = {
@@ -156,58 +168,44 @@ export class MarketController {
         return;
       }
 
-      console.log('[BINARY] Iniciando busca de mercados Binary/Turbo...');
-      const marketService = new MarketService(ssid);
-      
-      // Timeout de 10s para o snapshot
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout')), 10000);
-      });
-      
-      let markets: BinaryTurboInit;
+      // Pré-aquecer o cache chamando o serviço que dispara get-initialization-data
       try {
-        markets = await Promise.race([
-          marketService.getBinaryTurboLite(),
-          timeoutPromise
-        ]) as BinaryTurboInit;
-      } catch (error) {
-        console.warn('[BINARY] Snapshot initialization-data não recebido no tempo limite');
-        markets = { binary: [], turbo: [] };
+        const marketService = new RefactoredMarketService(ssid);
+        await marketService.getAllMarkets(); // não precisa aguardar atualização total; já preenche nomes/commissions/estado
+      } catch (e) {
+        console.warn('[BINARY] getAllMarkets falhou (seguindo com cache corrente):', (e as Error)?.message);
       }
-
+      
+      const out: BinaryMarketResponse[] = [];
+      
+      // Agregar ativos que aparecem em binaryOpenState
+      for (const [activeId, state] of marketCache.binaryOpenState.entries()) {
+        const name = marketCache.names.get(activeId) ?? String(activeId);
+        const payout = marketCache.getBinaryPayout(activeId); // 100 - open_percent
+        
+        // Opcional: filtrar somente abertos
+        // if (!state.is_open) continue;
+        
+        out.push({
+          iq_active_id: activeId,
+          name,
+          type: "binary",
+          subtype: state.subtype,        // "binary"|"turbo" se tiver salvo
+          payout_percent: MarketController.roundPayout(payout),
+          is_open: state.is_open
+        });
+      }
+      
+      // Ordenar desc por payout_percent (os undefined vão pro fim)
+      out.sort((a, b) => (b.payout_percent ?? -1) - (a.payout_percent ?? -1));
+      
       const response: ApiResponse = {
         success: true,
-        message: markets.binary.length === 0 && markets.turbo.length === 0 
-          ? 'Snapshot initialization-data não recebido no tempo limite'
-          : 'Mercados binários/turbo obtidos com sucesso',
-        data: {
-          binary_markets: markets.binary.map((m: any) => ({
-            id: m.id,
-            name: MarketController.sanitizeName(m.name),
-            instrument_type: 'binary',
-            payout_percentage: `${Number(m.payout_percentage ?? 0).toFixed(2)}%`,
-            payout_raw: Number(m.payout_raw ?? 0),
-            active_id: m.active_id,
-            source: m.source,
-            last_updated: m.last_updated
-          })),
-          turbo_markets: markets.turbo.map((m: any) => ({
-            id: m.id,
-            name: MarketController.sanitizeName(m.name),
-            instrument_type: 'turbo',
-            payout_percentage: `${Number(m.payout_percentage ?? 0).toFixed(2)}%`,
-            payout_raw: Number(m.payout_raw ?? 0),
-            active_id: m.active_id,
-            source: m.source,
-            last_updated: m.last_updated
-          })),
-          total_binary: markets.binary.length,
-          total_turbo: markets.turbo.length
-        },
+        message: `Mercados binários obtidos com sucesso (${out.length} mercados)`,
+        data: out,
         timestamp: new Date().toISOString()
       };
 
-      console.log(`[BINARY] Retornando ${markets.binary.length} binary, ${markets.turbo.length} turbo`);
       res.status(200).json(response);
     } catch (error) {
       console.error('[BINARY] Erro ao obter mercados binários:', error);
