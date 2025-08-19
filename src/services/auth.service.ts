@@ -13,6 +13,7 @@ import {
 } from '../errors/custom-errors';
 import { config } from '../config/app.config';
 import { v4 as uuidv4 } from 'uuid';
+import { Logger } from '../utils/logger';
 
 export class AuthService {
   constructor(private userModel: UserModel) {}
@@ -156,7 +157,7 @@ export class AuthService {
         throw error;
       }
       
-      console.error('Erro ao fazer login na IQ Option:', error.message);
+      Logger.error('AUTH', 'Erro ao fazer login na IQ Option', error);
       
       // Tratar erros de rede
       if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {

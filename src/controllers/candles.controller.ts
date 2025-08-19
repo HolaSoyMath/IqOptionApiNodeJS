@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { IQSocketService } from '../services/iqsocket.service';
 import { ApiResponse } from '../types/response.types';
+import { Logger } from "../utils/logger";
 
 export class CandlesController {
   private static socketService: IQSocketService | null = null;
@@ -65,7 +66,7 @@ export class CandlesController {
         return;
       }
 
-      console.log(`[CANDLES] Iniciando coleta para ${actives.length} ativos com tamanhos:`, sizes);
+      Logger.info("CANDLES", `Iniciando coleta para ${actives.length} ativos com tamanhos`, sizes);
       
       // Obter serviço e garantir conexão
       const socketService = CandlesController.getSocketService();
@@ -90,7 +91,7 @@ export class CandlesController {
             subscribed.push({ active_id: activeId, size });
           }
           
-          console.log(`[CANDLES] Ativo ${activeId} configurado com sucesso`);
+          Logger.info("CANDLES", `Ativo ${activeId} configurado com sucesso`);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
           errors.push({ active_id: activeId, error: errorMessage });

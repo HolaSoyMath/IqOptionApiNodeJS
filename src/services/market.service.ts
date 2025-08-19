@@ -1,23 +1,28 @@
-import { MarketData } from '../types/market.types';
-import { IQWebSocketClient } from './market/ws/iq-ws.client';
-import { CacheService } from './market/cache/cache.service';
-import { SessionService } from './market/auth/session.service';
-import { MarketDataMapper } from './market/mappers/market.mappers';
-import { WSResponse } from '../types/iq-ws.types';
-import { 
-  GetBinaryMarketsUseCase, 
-  GetAllMarketsUseCase, 
+import { MarketData } from "../types/market.types";
+import { IQWebSocketClient } from "./market/ws/iq-ws.client";
+import { CacheService } from "./market/cache/cache.service";
+import { SessionService } from "./market/auth/session.service";
+import { MarketDataMapper } from "./market/mappers/market.mappers";
+import { WSResponse } from "../types/iq-ws.types";
+import {
+  GetBinaryMarketsUseCase,
+  GetAllMarketsUseCase,
   CheckPairAvailabilityUseCase,
   GetBinaryMarketsResult,
-  PairAvailabilityResult
-} from './market/use-cases';
-import { MarketError } from './market/errors/market.errors';
-import { config } from '../config/app.config';
-import { GetSimpleMarketsUseCase } from './market/use-cases/get-simple-markets.use-case';
-import { SimpleMarketData, BinaryMarket, BinaryTurboInit } from '../types/market.types';
-import { marketCache } from './market/cache/market-cache';
-import Logger from '../utils/logger';
-import { IQWSClient } from './iq/ws-client';
+  PairAvailabilityResult,
+} from "./market/use-cases";
+import { MarketError } from "./market/errors/market.errors";
+import { config } from "../config/app.config";
+import { GetSimpleMarketsUseCase } from "./market/use-cases/get-simple-markets.use-case";
+import {
+  SimpleMarketData,
+  BinaryMarket,
+  BinaryTurboInit,
+} from "../types/market.types";
+import { marketCache } from "./market/cache/market-cache";
+import Logger from "../utils/logger";
+import { IQWSClient } from "./iq/ws-client";
+import { digitalInstrumentsCache } from "./digital-instruments-cache.service";
 
 /**
  * Serviço principal para gerenciamento de mercados da IQ Option
@@ -29,7 +34,7 @@ export class MarketService {
   private readonly sessionService: SessionService;
   private readonly mappers: typeof MarketDataMapper;
   private readonly ssid: string;
-  
+
   // Use cases
   private readonly getBinaryMarketsUseCase: GetBinaryMarketsUseCase;
   private readonly getAllMarketsUseCase: GetAllMarketsUseCase;
@@ -37,8 +42,8 @@ export class MarketService {
   private getSimpleMarketsUseCase: GetSimpleMarketsUseCase;
 
   constructor(ssid: string) {
-    if (!ssid || typeof ssid !== 'string') {
-      throw new MarketError('INVALID_SSID', 'SSID inválido fornecido');
+    if (!ssid || typeof ssid !== "string") {
+      throw new MarketError("INVALID_SSID", "SSID inválido fornecido");
     }
 
     this.ssid = ssid;
@@ -47,56 +52,57 @@ export class MarketService {
     this.cacheService = new CacheService();
     this.sessionService = new SessionService({ ssid });
     this.mappers = MarketDataMapper;
-    
+
     // Configuração do WebSocket
     const wsConfig = {
       url: config.iqOption.wsUrl,
       connectionTimeout: 10000,
       authTimeout: 5000,
       heartbeatInterval: 30000,
-      maxReconnectAttempts: 5
+      maxReconnectAttempts: 5,
     };
-    
+
     // Configurar event handlers para o WebSocket
     const eventHandlers = {
       onMessage: (message: WSResponse) => {
         this.handleWebSocketMessage(message);
       },
-      onOpen: () => Logger.info('MARKET_SERVICE', 'Conexão WebSocket aberta'),
-      onClose: () => Logger.info('MARKET_SERVICE', 'Conexão WebSocket fechada'),
-      onError: (error: Error) => Logger.error('MARKET_SERVICE', 'Erro WebSocket', error)
+      onOpen: () => Logger.info("MARKET_SERVICE", "Conexão WebSocket aberta"),
+      onClose: () => Logger.info("MARKET_SERVICE", "Conexão WebSocket fechada"),
+      onError: (error: Error) =>
+        Logger.error("MARKET_SERVICE", "Erro WebSocket", error),
     };
-    
+
     this.wsClient = new IQWebSocketClient(
       wsConfig,
       this.sessionService,
       eventHandlers
     );
-    
+
     // Inicializar casos de uso
     this.getBinaryMarketsUseCase = new GetBinaryMarketsUseCase(
       this.wsClient,
       this.cacheService,
       this.mappers
     );
-    
+
     this.getAllMarketsUseCase = new GetAllMarketsUseCase(
       this.wsClient,
       this.cacheService,
       this.mappers
     );
-    
+
     this.checkPairAvailabilityUseCase = new CheckPairAvailabilityUseCase(
       this.getAllMarketsUseCase
     );
-    
+
     this.getSimpleMarketsUseCase = new GetSimpleMarketsUseCase(
       this.wsClient,
       this.cacheService,
       this.mappers
     );
 
-    Logger.info('MARKET_SERVICE', 'MarketService inicializado com sucesso');
+    Logger.info("MARKET_SERVICE", "MarketService inicializado com sucesso");
   }
 
   /**
@@ -139,33 +145,37 @@ export class MarketService {
   async getBinaryTurboLite(): Promise<BinaryTurboInit> {
     try {
       const client = new IQWSClient({
-        url: process.env.IQ_WSS_URL || 'wss://ws.iqoption.com/echo/websocket',
+        url: process.env.IQ_WSS_URL || "wss://ws.iqoption.com/echo/websocket",
         ssid: this.ssid,
-        timeout: 10000
+        timeout: 10000,
       });
 
       await client.connect();
       const initData = await client.getInitializationData();
-      
+
       const result: BinaryTurboInit = {
-        binary: initData.binary.map(item => ({
-          id: typeof item.id === 'number' ? item.id : parseInt(String(item.id)),
+        binary: initData.binary.map((item) => ({
+          id: typeof item.id === "number" ? item.id : parseInt(String(item.id)),
           name: item.name,
-          active_id: item.active_id || (typeof item.id === 'number' ? item.id : parseInt(String(item.id))),
-          category: 'binary' as const
+          active_id:
+            item.active_id ||
+            (typeof item.id === "number" ? item.id : parseInt(String(item.id))),
+          category: "binary" as const,
         })),
-        turbo: initData.turbo.map(item => ({
-          id: typeof item.id === 'number' ? item.id : parseInt(String(item.id)),
+        turbo: initData.turbo.map((item) => ({
+          id: typeof item.id === "number" ? item.id : parseInt(String(item.id)),
           name: item.name,
-          active_id: item.active_id || (typeof item.id === 'number' ? item.id : parseInt(String(item.id))),
-          category: 'turbo' as const
-        }))
+          active_id:
+            item.active_id ||
+            (typeof item.id === "number" ? item.id : parseInt(String(item.id))),
+          category: "turbo" as const,
+        })),
       };
 
       client.disconnect();
       return result;
     } catch (error) {
-      Logger.error('MARKET_SERVICE', 'Erro ao buscar Binary/Turbo lite', error);
+      Logger.error("MARKET_SERVICE", "Erro ao buscar Binary/Turbo lite", error);
       return { binary: [], turbo: [] };
     }
   }
@@ -177,12 +187,16 @@ export class MarketService {
     try {
       await this.wsClient.disconnect();
       this.cacheService.clear();
-      Logger.info('MARKET_SERVICE', 'MarketService cleanup concluído');
+      Logger.info("MARKET_SERVICE", "MarketService cleanup concluído");
     } catch (error) {
-      Logger.error('MARKET_SERVICE', 'Erro durante cleanup do MarketService', error);
+      Logger.error(
+        "MARKET_SERVICE",
+        "Erro durante cleanup do MarketService",
+        error
+      );
       throw new MarketError(
-        'Falha ao limpar recursos do MarketService: CLEANUP_ERROR',
-        'CLEANUP_ERROR'
+        "Falha ao limpar recursos do MarketService: CLEANUP_ERROR",
+        "CLEANUP_ERROR"
       );
     }
   }
@@ -204,36 +218,44 @@ export class MarketService {
   }
 
   private handleWebSocketMessage(message: WSResponse): void {
-    Logger.debug('MARKET_SERVICE', `Mensagem WebSocket recebida: ${message.name}`);
-    
+    Logger.debug(
+      "MARKET_SERVICE",
+      `Mensagem WebSocket recebida: ${message.name}`
+    );
+
     // Processar diferentes tipos de mensagem
     switch (message.name) {
-      case 'api_option_init_all_result':
-      case 'initialization-data':
+      case "api_option_init_all_result":
+      case "initialization-data":
         this.handleInitializationData(message);
         break;
-      case 'instruments':
+      case "instruments":
         this.handleInstrumentsData(message);
         break;
-      case 'timeSync':
+      case "timeSync":
         this.handleTimeSync(message);
         break;
-      case 'front':
+      case "front":
         this.handleFrontMessage(message);
         break;
       default:
-        Logger.debug('MARKET_SERVICE', `Tipo de mensagem não tratado: ${message.name}`);
+        Logger.debug(
+          "MARKET_SERVICE",
+          `Tipo de mensagem não tratado: ${message.name}`
+        );
     }
   }
 
   private handleTimeSync(message: WSResponse): void {
     // Atualizar timestamp interno se necessário
-    Logger.safe('MARKET_SERVICE', 'TimeSync recebido', { timestamp: Date.now() });
+    Logger.safe("MARKET_SERVICE", "TimeSync recebido", {
+      timestamp: Date.now(),
+    });
   }
 
   private handleFrontMessage(message: WSResponse): void {
     // Processar configurações do frontend se necessário
-    Logger.safe('MARKET_SERVICE', 'Mensagem front recebida', message);
+    Logger.safe("MARKET_SERVICE", "Mensagem front recebida", message);
   }
 
   private handleInitializationData(message: WSResponse): void {
@@ -246,42 +268,72 @@ export class MarketService {
 
       for (const [idStr, active] of Object.entries<any>(binaryActives)) {
         const activeId = Number(idStr);
-        const rawName = active?.name ?? active?.asset ?? active?.ticker ?? active?.symbol ?? String(activeId);
-        const name = typeof rawName === 'string' && rawName.startsWith('front.') ? rawName.slice(6) : rawName;
+        const rawName =
+          active?.name ??
+          active?.asset ??
+          active?.ticker ??
+          active?.symbol ??
+          String(activeId);
+        const name =
+          typeof rawName === "string" && rawName.startsWith("front.")
+            ? rawName.slice(6)
+            : rawName;
         nameMap[activeId] = name;
 
         const commission = active?.option?.profit?.commission;
-        if (typeof commission === 'number') commissions[activeId] = commission;
+        if (typeof commission === "number") commissions[activeId] = commission;
 
         const isOpen = !!(active?.enabled && !active?.is_suspended);
-        marketCache.updateBinaryOpenState(activeId, { subtype: 'binary', is_open: isOpen });
+        marketCache.updateBinaryOpenState(activeId, {
+          subtype: "binary",
+          is_open: isOpen,
+        });
       }
 
       // TURBO
       const turboActives = data?.turbo?.actives || {};
       for (const [idStr, active] of Object.entries<any>(turboActives)) {
         const activeId = Number(idStr);
-        const rawName = active?.name ?? active?.asset ?? active?.ticker ?? active?.symbol ?? String(activeId);
-        const name = typeof rawName === 'string' && rawName.startsWith('front.') ? rawName.slice(6) : rawName;
+        const rawName =
+          active?.name ??
+          active?.asset ??
+          active?.ticker ??
+          active?.symbol ??
+          String(activeId);
+        const name =
+          typeof rawName === "string" && rawName.startsWith("front.")
+            ? rawName.slice(6)
+            : rawName;
         nameMap[activeId] = name;
 
         const commission = active?.option?.profit?.commission;
-        if (typeof commission === 'number') commissions[activeId] = commission;
+        if (typeof commission === "number") commissions[activeId] = commission;
 
         const isOpen = !!(active?.enabled && !active?.is_suspended);
-        marketCache.updateBinaryOpenState(activeId, { subtype: 'turbo', is_open: isOpen });
+        marketCache.updateBinaryOpenState(activeId, {
+          subtype: "turbo",
+          is_open: isOpen,
+        });
       }
 
       if (Object.keys(nameMap).length) {
         marketCache.updateNames(nameMap);
-        Logger.safe('MARKET_SERVICE', `Cache names atualizado`, nameMap);
+        Logger.safe("MARKET_SERVICE", `Cache names atualizado`, nameMap);
       }
       if (Object.keys(commissions).length) {
         marketCache.updateBinaryCommissions(commissions);
-        Logger.safe('MARKET_SERVICE', `Cache binaryCommissions atualizado`, commissions);
+        Logger.safe(
+          "MARKET_SERVICE",
+          `Cache binaryCommissions atualizado`,
+          commissions
+        );
       }
     } catch (err) {
-      Logger.warn('MARKET_SERVICE', 'Falha ao aplicar initialization-data no cache', err);
+      Logger.warn(
+        "MARKET_SERVICE",
+        "Falha ao aplicar initialization-data no cache",
+        err
+      );
     }
 
     this.getAllMarketsUseCase.handleInitializationData(message.msg);
@@ -292,8 +344,11 @@ export class MarketService {
       const data = (message as any)?.msg || (message as any)?.data || message;
       const instrumentType = data?.type;
 
-      if (instrumentType === 'binary-option' || instrumentType === 'turbo-option') {
-        const subtype = instrumentType === 'binary-option' ? 'binary' : 'turbo';
+      if (
+        instrumentType === "binary-option" ||
+        instrumentType === "turbo-option"
+      ) {
+        const subtype = instrumentType === "binary-option" ? "binary" : "turbo";
         const list = Array.isArray(data?.instruments) ? data.instruments : [];
 
         let count = 0;
@@ -304,23 +359,137 @@ export class MarketService {
           let isOpen = !!instr?.enabled;
           if (!isOpen && Array.isArray(instr?.schedule)) {
             const now = Date.now() / 1000;
-            isOpen = instr.schedule.some((w: any) => now >= w.open && now <= w.close);
+            isOpen = instr.schedule.some(
+              (w: any) => now >= w.open && now <= w.close
+            );
           }
 
-          marketCache.updateBinaryOpenState(activeId, { subtype, is_open: isOpen });
+          marketCache.updateBinaryOpenState(activeId, {
+            subtype,
+            is_open: isOpen,
+          });
           count++;
         }
-        Logger.safe('MARKET_SERVICE', `Cache binaryOpenState (${subtype}) atualizado`, { count });
+        Logger.safe(
+          "MARKET_SERVICE",
+          `Cache binaryOpenState (${subtype}) atualizado`,
+          { count }
+        );
+      } else if (instrumentType === "digital-option") {
+        // Processar instrumentos digitais usando o cache dedicado
+        digitalInstrumentsCache.handleInstrumentsMessage(message);
+
+        // Também atualizar o MarketCache com os instrumentos digitais
+        const instruments = Array.isArray(data?.instruments)
+          ? data.instruments
+          : [];
+        let count = 0;
+
+        for (const instr of instruments) {
+          try {
+            const instrumentId = instr?.instrument_id || instr?.id;
+            const instrumentIndex = instr?.instrument_index || instr?.index;
+            const activeId = instr?.active_id || instr?.underlying;
+            const expiryEpoch = instr?.expiry_epoch || instr?.expiration;
+
+            if (
+              instrumentId &&
+              instrumentIndex !== undefined &&
+              activeId &&
+              expiryEpoch
+            ) {
+              // Extrair duration e direction do instrument_id
+              const parsedInfo = this.parseInstrumentId(instrumentId);
+              
+              if (parsedInfo) {
+                marketCache.upsertDigitalInstrument({
+                  instrument_id: instrumentId,
+                  instrument_index: instrumentIndex,
+                  active_id: activeId,
+                  expiry_epoch: expiryEpoch,
+                  duration: parsedInfo.duration,
+                  direction: parsedInfo.direction
+                });
+                count++;
+              }
+            }
+          } catch (err) {
+            Logger.warn(
+              "MARKET_SERVICE",
+              "Erro ao processar instrumento digital individual",
+              err
+            );
+          }
+        }
+
+        Logger.safe("MARKET_SERVICE", `Cache digitalIndex atualizado`, {
+          count,
+        });
       }
     } catch (err) {
-      Logger.warn('MARKET_SERVICE', 'Falha ao aplicar instruments no cache', err);
+      Logger.warn(
+        "MARKET_SERVICE",
+        "Falha ao aplicar instruments no cache",
+        err
+      );
     }
 
     const instrumentType = (message as any)?.msg?.type;
     if (instrumentType) {
-      this.getAllMarketsUseCase.handleInstrumentsData((message as any).msg, instrumentType);
+      this.getAllMarketsUseCase.handleInstrumentsData(
+        (message as any).msg,
+        instrumentType
+      );
     } else {
-      Logger.warn('MARKET_SERVICE', 'Mensagem de instrumentos sem tipo', message);
+      Logger.warn(
+        "MARKET_SERVICE",
+        "Mensagem de instrumentos sem tipo",
+        message
+      );
+    }
+  }
+
+  private parseInstrumentId(instrumentId: string): {
+    activeId: number;
+    expiryEpoch: number;
+    duration: 1 | 5;
+    direction: "call" | "put";
+  } | null {
+    try {
+      // Formato: do{activeId}A{yyyymmdd}D{hhmmss}T{duration}M{direction}SPT
+      const match = instrumentId.match(/^do(\d+)A(\d{8})D(\d{6})T(\d+)M([CP])SPT$/);
+      
+      if (!match) {
+        return null;
+      }
+  
+      const [, activeIdStr, dateStr, timeStr, durationStr, directionStr] = match;
+      
+      const activeId = parseInt(activeIdStr);
+      const duration = parseInt(durationStr) as 1 | 5;
+      const direction = directionStr === "C" ? "call" : "put";
+      
+      // Construir timestamp de expiração
+      const year = parseInt(dateStr.slice(0, 4));
+      const month = parseInt(dateStr.slice(4, 6)) - 1; // JavaScript months são 0-indexed
+      const day = parseInt(dateStr.slice(6, 8));
+      const hour = parseInt(timeStr.slice(0, 2));
+      const minute = parseInt(timeStr.slice(2, 4));
+      const second = parseInt(timeStr.slice(4, 6));
+      
+      const expiryDate = new Date(Date.UTC(year, month, day, hour, minute, second));
+      const expiryEpoch = Math.floor(expiryDate.getTime() / 1000);
+      
+      return {
+        activeId,
+        expiryEpoch,
+        duration,
+        direction,
+      };
+      
+    } catch (error) {
+      Logger.warn("MARKET_SERVICE", `Erro ao fazer parse do instrument_id: ${instrumentId}`, error);
+      return null;
     }
   }
 }

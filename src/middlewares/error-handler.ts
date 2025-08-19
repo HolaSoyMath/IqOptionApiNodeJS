@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/custom-errors';
 import { ApiResponse } from '../types/response.types';
+import { Logger } from "../utils/logger";
 
 export const errorHandler = (
   error: Error,
@@ -20,11 +21,9 @@ export const errorHandler = (
 
   // Log do erro para desenvolvimento
   if (process.env.NODE_ENV === 'development') {
-    console.error('Error Details:', {
+    Logger.error("ERROR_HANDLER", "Error Details", {
       message: error.message,
       stack: error.stack,
-      statusCode,
-      isOperational,
       url: req.url,
       method: req.method,
       body: req.body,
