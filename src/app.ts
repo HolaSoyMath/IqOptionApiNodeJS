@@ -8,12 +8,10 @@ import marketRoutes from "./routes/market.routes";
 import candlesRoutes from "./routes/candles.routes";
 import accountRoutes from "./routes/account.routes";
 import healthRoutes from "./routes/health.routes";
+import ordersRoutes from "./routes/orders.routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { config } from "./config/app.config";
 import { Logger } from "./utils/logger";
-
-// Carregar variáveis de ambiente
-dotenv.config();
 
 class App {
   public app: Express;
@@ -51,8 +49,6 @@ class App {
     }
   }
 
-  // Removido: import ordersRoutes from "./routes/orders.routes";
-
   private initializeRoutes(): void {
     // Health check route
     this.app.use("/health", healthRoutes);
@@ -62,7 +58,7 @@ class App {
     this.app.use("/api/markets", marketRoutes);
     this.app.use("/api/candles", candlesRoutes);
     this.app.use("/api/account", accountRoutes);
-    // Removido: this.app.use("/api/orders", ordersRoutes);
+    this.app.use("/api/orders", ordersRoutes);
 
     // Root endpoint
     this.app.get("/", (req, res) => {
@@ -77,8 +73,7 @@ class App {
           markets: "/api/markets",
           candles: "/api/candles",
           account: "/api/account",
-          // Removido: orders: "/api/orders",
-          docs: "/api-docs",
+          orders: "/api/orders",
         },
       });
     });
@@ -104,7 +99,7 @@ class App {
           markets: "/api/markets",
           candles: "/api/candles",
           account: "/api/account",
-          // Removido: orders: "/api/orders",
+          orders: "/api/orders",
           docs: "/api-docs",
         },
       });
