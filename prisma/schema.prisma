@@ -7,6 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AccountType {
+  real
+  demo
+}
+
+enum Status {
+  active
+  inactive
+  win
+  loss
+  open
+}
+
+enum StopGainType {
+  percentage
+  value
+}
+
+enum StopLossType {
+  percentage
+  value
+}
+
+enum OrderType {
+  call
+  put
+}
+
+enum Source {
+  auto
+  manual
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -31,4 +64,39 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+model Strategy {
+  id              Int            @id @default(autoincrement())
+  name            String
+  status          Status         // "active" | "inactive"
+  entryValue      Float
+  accountType     AccountType    // "real" | "demo"
+  stopGainType    StopGainType   // "percentage" | "value"
+  stopGainValue   Float 
+  stopLossType    StopLossType   // "percentage" | "value"
+  stopLossValue   Float
+  accuracyRate    Float?
+  totalProfit     Float?
+  operationCount  Int?
+  orders          Order[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Order {
+  id            Int        @id @default(autoincrement())
+  dateTime      DateTime
+  strategyId    Int?
+  strategy      Strategy?  @relation(fields: [strategyId], references: [id])
+  asset         String
+  type          OrderType  // "call" | "put"
+  amount        Float
+  status        Status     // "win" | "loss" | "open"
+  profit        Float
+  source        Source     // "auto" | "manual"
+  accountType   AccountType // "real" | "demo"
+  payoutPercent Float?
+  entryPrice    Float?
+  closePrice    Float?
 }
