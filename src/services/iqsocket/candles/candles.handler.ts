@@ -2,13 +2,32 @@ import { CandlesStore } from './candles.store';
 import { CandlesNormalizer } from './candles.normalizer';
 import { RequestsStore } from '../requests/requests.store';
 import { IQSocketLogger } from '../utils/logger';
-import { KeyUtils } from '../utils/keys';
+import { candleManager } from '../../candleManager';
+import { Candle } from '../../../types/candle.types';
 
 export class CandlesHandler {
   constructor(
     private candlesStore: CandlesStore,
     private requestsStore: RequestsStore
   ) {}
+
+  /**
+   * Converte CandleData/LiveCandle para formato do CandleManager
+   */
+  private convertToGlobalCandle(candleData: any, activeId: number): Candle {
+    return {
+      id: `${activeId}_${candleData.size}_${candleData.from}`,
+      symbol: activeId.toString(), // Usar activeId como symbol por enquanto
+      timeframe: `${candleData.size}s`,
+      timestamp: candleData.from * 1000, // Converter para milliseconds
+      open: candleData.open,
+      high: candleData.high,
+      low: candleData.low,
+      close: candleData.close,
+      volume: candleData.volume || 0,
+      createdAt: new Date()
+    };
+  }
 
   /**
    * Processa first-candles (dados históricos)
@@ -44,6 +63,10 @@ export class CandlesHandler {
     for (const [size, candles] of candlesBySize) {
       for (const candle of candles) {
         this.candlesStore.pushHistory(activeId, size, candle);
+        
+        // 🔥 NOVA INTEGRAÇÃO: Adicionar ao estado global
+        const globalCandle = this.convertToGlobalCandle(candle, activeId);
+        candleManager.addCandle(globalCandle);
         
         // Log do seed
         // No método handleFirstCandles, para seed:
@@ -84,6 +107,10 @@ export class CandlesHandler {
     // Se houve fechamento do candle anterior
     if (result.closed) {
       this.candlesStore.pushHistory(activeId, size, result.closed);
+      
+      // 🔥 NOVA INTEGRAÇÃO: Adicionar candle fechado ao estado global
+      const globalCandle = this.convertToGlobalCandle(result.closed, activeId);
+      candleManager.addCandle(globalCandle);
       
       // Log de fechamento
       // No método handleCandleGenerated, para rollover:
