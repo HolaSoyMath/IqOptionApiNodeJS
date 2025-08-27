@@ -79,9 +79,9 @@ model Strategy {
   accuracyRate    Float?
   totalProfit     Float?
   operationCount  Int?
-  orders          Order[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  orders          Order[]
 }
 
 model Order {
@@ -99,4 +99,6 @@ model Order {
   payoutPercent Float?
   entryPrice    Float?
   closePrice    Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
