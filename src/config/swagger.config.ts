@@ -268,6 +268,228 @@ const options = {
             }
           }
         },
+        Config: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'ID único da configuração',
+              example: 1
+            },
+            autoConnect: {
+              type: 'boolean',
+              description: 'Se deve conectar automaticamente na inicialização',
+              example: false
+            },
+            defaultEntryValue: {
+              type: 'number',
+              minimum: 1,
+              description: 'Valor padrão de entrada para operações (mínimo: 1)',
+              example: 5.0
+            },
+            maxOperationsPerDay: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Número máximo de operações por dia',
+              example: 50
+            },
+            stopLoss: {
+              type: 'number',
+              minimum: 0,
+              description: 'Valor de stop loss (0 = desabilitado)',
+              example: 0
+            },
+            stopGain: {
+              type: 'number',
+              minimum: 0,
+              description: 'Valor de stop gain (0 = desabilitado)',
+              example: 0
+            },
+            stopLossEnabled: {
+              type: 'boolean',
+              description: 'Se o stop loss está habilitado',
+              example: false
+            },
+            stopGainEnabled: {
+              type: 'boolean',
+              description: 'Se o stop gain está habilitado',
+              example: false
+            },
+            notifications: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                win: {
+                  type: 'boolean',
+                  description: 'Notificações para operações ganhas'
+                },
+                loss: {
+                  type: 'boolean',
+                  description: 'Notificações para operações perdidas'
+                },
+                auto: {
+                  type: 'boolean',
+                  description: 'Notificações para operações automáticas'
+                },
+                sound: {
+                  type: 'boolean',
+                  description: 'Notificações sonoras'
+                }
+              },
+              example: {
+                win: true,
+                loss: true,
+                auto: true,
+                sound: true
+              }
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data de criação da configuração'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data da última atualização'
+            }
+          },
+          required: ['id', 'autoConnect', 'defaultEntryValue', 'maxOperationsPerDay', 'stopLoss', 'stopGain', 'stopLossEnabled', 'stopGainEnabled', 'createdAt', 'updatedAt']
+        },
+        ConfigData: {
+          type: 'object',
+          properties: {
+            autoConnect: {
+              type: 'boolean',
+              description: 'Se deve conectar automaticamente na inicialização',
+              example: true
+            },
+            defaultEntryValue: {
+              type: 'number',
+              minimum: 1,
+              description: 'Valor padrão de entrada para operações (mínimo: 1)',
+              example: 10.0
+            },
+            maxOperationsPerDay: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Número máximo de operações por dia',
+              example: 100
+            },
+            stopLoss: {
+              type: 'number',
+              minimum: 0,
+              description: 'Valor de stop loss (0 = desabilitado)',
+              example: 50
+            },
+            stopGain: {
+              type: 'number',
+              minimum: 0,
+              description: 'Valor de stop gain (0 = desabilitado)',
+              example: 100
+            },
+            stopLossEnabled: {
+              type: 'boolean',
+              description: 'Se o stop loss está habilitado',
+              example: true
+            },
+            stopGainEnabled: {
+              type: 'boolean',
+              description: 'Se o stop gain está habilitado',
+              example: true
+            },
+            notifications: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                win: {
+                  type: 'boolean',
+                  description: 'Notificações para operações ganhas'
+                },
+                loss: {
+                  type: 'boolean',
+                  description: 'Notificações para operações perdidas'
+                },
+                auto: {
+                  type: 'boolean',
+                  description: 'Notificações para operações automáticas'
+                },
+                sound: {
+                  type: 'boolean',
+                  description: 'Notificações sonoras'
+                }
+              },
+              example: {
+                win: true,
+                loss: false,
+                auto: true,
+                sound: false
+              }
+            }
+          },
+          additionalProperties: false
+        },
+        ConfigResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            message: {
+              type: 'string',
+              example: 'Configurações recuperadas com sucesso'
+            },
+            data: {
+              type: 'object',
+              properties: {
+                autoConnect: {
+                  type: 'boolean',
+                  example: false
+                },
+                defaultEntryValue: {
+                  type: 'number',
+                  example: 5.0
+                },
+                maxOperationsPerDay: {
+                  type: 'integer',
+                  example: 50
+                },
+                stopLoss: {
+                  type: 'number',
+                  example: 0
+                },
+                stopGain: {
+                  type: 'number',
+                  example: 0
+                },
+                stopLossEnabled: {
+                  type: 'boolean',
+                  example: false
+                },
+                stopGainEnabled: {
+                  type: 'boolean',
+                  example: false
+                },
+                notifications: {
+                  type: 'object',
+                  nullable: true,
+                  example: {
+                    win: true,
+                    loss: true,
+                    auto: true,
+                    sound: true
+                  }
+                }
+              }
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time'
+            }
+          },
+          required: ['success', 'message', 'data', 'timestamp']
+        },
         Error: {
           type: 'object',
           properties: {
