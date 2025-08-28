@@ -92,7 +92,7 @@ describe('Testes do Modelo de Configuração', () => {
 
   describe('Teste de Atualização de Campos', () => {
     it('deve atualizar autoConnect para true e verificar se persiste', async () => {
-      // Criar configuração inicial
+      // Criar configuração inicial dentro do próprio teste
       const initialConfig = await prisma.config.create({
         data: {}
       });
@@ -114,7 +114,7 @@ describe('Testes do Modelo de Configuração', () => {
     });
 
     it('deve atualizar notifications e verificar se persiste', async () => {
-      // Criar configuração inicial
+      // Criar configuração inicial dentro do próprio teste
       const initialConfig = await prisma.config.create({
         data: {}
       });

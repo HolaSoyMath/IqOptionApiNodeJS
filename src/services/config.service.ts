@@ -90,8 +90,9 @@ export class ConfigService {
 
   private static validateConfigData(data: ConfigData) {
     if (data.defaultEntryValue !== undefined) {
-      if (typeof data.defaultEntryValue !== 'number' || data.defaultEntryValue <= 0) {
-        throw new AppError('defaultEntryValue deve ser um número positivo', 400);
+      const MIN_ENTRY_VALUE = 1; // Definir limite mínimo
+      if (typeof data.defaultEntryValue !== 'number' || data.defaultEntryValue < MIN_ENTRY_VALUE) {
+        throw new AppError(`defaultEntryValue deve ser no mínimo ${MIN_ENTRY_VALUE}`, 400);
       }
     }
 

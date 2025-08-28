@@ -96,11 +96,9 @@ describe('Testes de Integração de Configuração', () => {
 
   describe('Testes de Concorrência', () => {
     it('deve lidar com múltiplas requisições simultâneas para POST /api/config sem corromper dados', async () => {
-      console.log('🔍 [DEBUG] Iniciando teste de concorrência');
       
       // Verificar estado inicial
       const initialConfigs = await prisma.config.findMany();
-      console.log('🔍 [DEBUG] Configurações iniciais:', initialConfigs.length, initialConfigs);
       
       const configData1 = {
         autoConnect: true,
@@ -117,10 +115,8 @@ describe('Testes de Integração de Configuração', () => {
         defaultEntryValue: 35.0
       };
 
-      console.log('🔍 [DEBUG] Dados de configuração para teste:', { configData1, configData2, configData3 });
 
       // Executar múltiplas requisições simultaneamente
-      console.log('🔍 [DEBUG] Executando requisições simultâneas...');
       const promises = [
         request(app).post('/api/config').send(configData1),
         request(app).post('/api/config').send(configData2),
@@ -128,25 +124,21 @@ describe('Testes de Integração de Configuração', () => {
       ];
 
       const responses = await Promise.all(promises);
-      console.log('🔍 [DEBUG] Respostas das requisições:', responses.map(r => ({ status: r.status, body: r.body })));
 
       // Verificar se todas as requisições foram bem-sucedidas
       responses.forEach((response, index) => {
-        console.log(`🔍 [DEBUG] Resposta ${index + 1}:`, { status: response.status, success: response.body.success });
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
       });
 
       // Verificar estado final do banco
       const configs = await prisma.config.findMany();
-      console.log('🔍 [DEBUG] Configurações finais no banco:', configs.length, configs);
 
       // Verificar se há apenas uma configuração no banco
       expect(configs).toHaveLength(1);
 
       // Verificar se a configuração final é válida
       const finalConfig = configs[0];
-      console.log('🔍 [DEBUG] Configuração final:', finalConfig);
       
       expect([15.0, 25.0, 35.0]).toContain(finalConfig.defaultEntryValue);
       expect([true, false]).toContain(finalConfig.autoConnect);

@@ -175,8 +175,17 @@ describe('Testes do ConfigService', () => {
   describe('updateConfig() com dados inválidos', () => {
     it('deve retornar erro ao tentar atualizar com defaultEntryValue negativo', async () => {
       const invalidData: ConfigData = {
-        defaultEntryValue: -5.0
+        defaultEntryValue: -1
       };
+
+      console.log('🔍 DEBUG: Testando defaultEntryValue negativo:', invalidData.defaultEntryValue);
+      
+      try {
+        const result = await ConfigService.updateConfig(invalidData);
+        console.log('❌ DEBUG: Teste deveria ter falhado, mas retornou:', result);
+      } catch (error) {
+        console.log('✅ DEBUG: Erro capturado como esperado:', (error as Error).message);
+      }
 
       await expect(ConfigService.updateConfig(invalidData))
         .rejects
@@ -184,7 +193,7 @@ describe('Testes do ConfigService', () => {
         
       await expect(ConfigService.updateConfig(invalidData))
         .rejects
-        .toThrow('defaultEntryValue deve ser um número positivo');
+        .toThrow('defaultEntryValue deve ser no mínimo 1');
     });
 
     it('deve retornar erro ao tentar atualizar com maxOperationsPerDay inválido', async () => {
@@ -232,4 +241,36 @@ describe('Testes do ConfigService', () => {
         
     });
   });
+
+  describe('Valores Limite', () => {
+  it('deve aceitar defaultEntryValue no limite mínimo (1)', async () => {
+    const validData = { defaultEntryValue: 1 };
+    const expectedConfig = { id: 1, ...validData, createdAt: new Date(), updatedAt: new Date() };
+    
+    console.log('🔍 DEBUG: Testando defaultEntryValue no limite mínimo:', validData.defaultEntryValue);
+    
+    mockPrisma.config.upsert.mockResolvedValue(expectedConfig);
+    
+    const result = await ConfigService.updateConfig(validData);
+    console.log('✅ DEBUG: Resultado do teste de limite mínimo:', result.defaultEntryValue);
+    expect(result.defaultEntryValue).toBe(1);
+  });
+
+  it('deve rejeitar defaultEntryValue abaixo do limite mínimo (0.5)', async () => {
+    const invalidData = { defaultEntryValue: 0.5 };
+    
+    console.log('🔍 DEBUG: Testando defaultEntryValue abaixo do limite:', invalidData.defaultEntryValue);
+    
+    try {
+      const result = await ConfigService.updateConfig(invalidData);
+      console.log('❌ DEBUG: Teste deveria ter falhado, mas retornou:', result);
+    } catch (error) {
+      console.log('✅ DEBUG: Erro capturado como esperado:', (error as Error).message);
+    }
+    
+    await expect(ConfigService.updateConfig(invalidData))
+      .rejects
+      .toThrow('defaultEntryValue deve ser no mínimo 1');
+  });
+});
 });

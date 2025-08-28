@@ -71,7 +71,7 @@ describe('Testes de Migração de Configuração', () => {
         expect(notificationsColumn?.is_nullable).toBe('YES'); // JSON pode ser null
 
       } catch (error: any) {
-        throw new AppError('Erro ao verificar estrutura da tabela: ' + error.message, 500);
+        throw new AppError('Erro ao verificar estrutura da tabela: ' + (error as Error).message, 500);
       }
     });
 
@@ -135,7 +135,7 @@ describe('Testes de Migração de Configuração', () => {
         expect(deleted).toBeNull();
 
       } catch (error: any) {
-        throw new AppError('Erro nas operações CRUD: ' + error.message, 500);
+        throw new AppError('Erro nas operações CRUD: ' + (error as Error).message, 500);
       }
     });
 
@@ -190,7 +190,7 @@ describe('Testes de Migração de Configuração', () => {
         await prisma.config.deleteMany({});
 
       } catch (error: any) {
-        throw new AppError('Erro ao testar campo JSON notifications: ' + error.message, 500);
+        throw new AppError('Erro ao testar campo JSON notifications: ' + (error as Error).message, 500);
       }
     });
 
@@ -221,7 +221,7 @@ describe('Testes de Migração de Configuração', () => {
         await prisma.config.deleteMany({});
 
       } catch (error: any) {
-        throw new AppError('Erro ao testar valores padrão: ' + error.message, 500);
+        throw new AppError('Erro ao testar valores padrão: ' + (error as Error).message, 500);
       }
     });
 
@@ -253,26 +253,19 @@ describe('Testes de Migração de Configuração', () => {
         await prisma.config.deleteMany({});
 
       } catch (error: any) {
-        throw new AppError('Erro ao testar constraint de ID único: ' + error.message, 500);
+        throw new AppError('Erro ao testar constraint de ID único: ' + (error as Error).message, 500);
       }
     });
   });
 
   describe('Testes de Integridade de Dados', () => {
     it('deve manter consistência de dados através das operações', async () => {
-      try {
-        console.log('🔍 [DEBUG] Iniciando teste de integridade de dados');
-        
-        // Remover a limpeza manual já que beforeEach faz isso
-        // const deleteResult = await prisma.config.deleteMany({});
-        
+      try {        
         // Verificar estado inicial do banco (deve estar limpo)
         const initialConfigs = await prisma.config.findMany();
-        console.log('🔍 [DEBUG] Configurações iniciais no banco:', initialConfigs.length, initialConfigs);
         expect(initialConfigs).toHaveLength(0); // Deve estar vazio
 
         // Criar uma configuração inicial
-        console.log('🔍 [DEBUG] Criando configuração inicial...');
         const initialConfig = await prisma.config.create({
           data: {
             autoConnect: false,
@@ -289,13 +282,11 @@ describe('Testes de Migração de Configuração', () => {
             }
           }
         });
-        console.log('🔍 [DEBUG] Configuração inicial criada:', initialConfig);
 
         // Verificar se a configuração foi criada corretamente
         expect(initialConfig).toBeDefined();
         expect(initialConfig.defaultEntryValue).toBe(10);
         expect(initialConfig.maxOperationsPerDay).toBe(25);
-        console.log('🔍 [DEBUG] ID da configuração inicial:', initialConfig.id);
         
         // Armazenar o ID real gerado para usar nas próximas operações
         const configId = initialConfig.id;
@@ -303,11 +294,9 @@ describe('Testes de Migração de Configuração', () => {
 
         // Verificar estado do banco após criação
         const afterCreateConfigs = await prisma.config.findMany();
-        console.log('🔍 [DEBUG] Configurações após criação:', afterCreateConfigs.length, afterCreateConfigs);
         expect(afterCreateConfigs).toHaveLength(1);
 
         // Testar atualização (upsert) usando o ID real
-        console.log('🔍 [DEBUG] Fazendo upsert...');
         const updatedConfig = await prisma.config.upsert({
           where: { id: configId },
           update: {
@@ -321,18 +310,15 @@ describe('Testes de Migração de Configuração', () => {
             autoConnect: true
           }
         });
-        console.log('🔍 [DEBUG] Configuração após upsert:', updatedConfig);
 
         // Verificar se a atualização funcionou
         expect(updatedConfig.defaultEntryValue).toBe(20);
         expect(updatedConfig.maxOperationsPerDay).toBe(50);
         expect(updatedConfig.autoConnect).toBe(true);
-        console.log('🔍 [DEBUG] ID após upsert:', updatedConfig.id);
         expect(updatedConfig.id).toBe(configId); // ID deve permanecer o mesmo
 
         // Verificar que existe apenas uma configuração
         const allConfigs = await prisma.config.findMany();
-        console.log('🔍 [DEBUG] Todas as configurações finais:', allConfigs.length, allConfigs);
         expect(allConfigs).toHaveLength(1);
 
         // Não precisa limpar manualmente - afterEach fará isso
@@ -340,7 +326,7 @@ describe('Testes de Migração de Configuração', () => {
 
       } catch (error: any) {
         console.error('🔍 [DEBUG] Erro capturado:', error);
-        throw new AppError('Erro ao testar integridade de dados: ' + error.message, 500);
+        throw new AppError('Erro ao testar integridade de dados: ' + (error as Error).message, 500);
       }
     });
   });
