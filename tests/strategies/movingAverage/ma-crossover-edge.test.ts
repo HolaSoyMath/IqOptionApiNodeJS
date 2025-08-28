@@ -20,12 +20,12 @@ function generateCandles(count: number, startClose: number = 1, increment: numbe
   }));
 }
 
-describe('MA Crossover Strategy - Edge Cases', () => {
+describe('Testes da Estratégia MA Crossover - Casos Extremos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns HOLD for empty candles array', () => {
+  it('retorna HOLD para array de candles vazio', () => {
     const candles: Candle[] = [];
     const signal2 = checkMA2Crossover(candles, 3, 8);
     const signal3 = checkMA3Crossover(candles, 5, 10, 20);
@@ -33,7 +33,7 @@ describe('MA Crossover Strategy - Edge Cases', () => {
     expect(signal3).toBe('HOLD');
   });
 
-  it('returns HOLD for invalid periods', () => {
+  it('retorna HOLD para períodos inválidos', () => {
     const candles = generateCandles(5);
     const signal2 = checkMA2Crossover(candles, 0, 8);
     const signal3 = checkMA3Crossover(candles, -1, 10, 20);
@@ -41,7 +41,7 @@ describe('MA Crossover Strategy - Edge Cases', () => {
     expect(signal3).toBe('HOLD');
   });
 
-  it('handles rapid price changes correctly', () => {
+  it('lida corretamente com mudanças rápidas de preço', () => {
     const candles = generateCandles(12, 1.0, 0);
     // Modificar alguns candles para ter mudanças bruscas
     candles[3].close = 0.9;

@@ -16,58 +16,58 @@ function generateCandles(count: number, startClose: number = 1): Candle[] {
   }));
 }
 
-describe('Exponential Moving Average (EMA) - Extended Tests', () => {
+describe('Testes da Média Móvel Exponencial (EMA) - Testes Estendidos', () => {
   // Testes de cálculo normal
-  it('calculates EMA for 5 periods with 5 candles', () => {
+  it('calcula EMA para 5 períodos com 5 candles', () => {
     const candles = generateCandles(5);
     const ema = calculateEMA(candles, 5);
     expect(ema).toBeCloseTo(3, 6);
   });
 
-  it('calculates EMA for 5 periods with 6 candles', () => {
+  it('calcula EMA para 5 períodos com 6 candles', () => {
     const candles = generateCandles(6);
     const ema = calculateEMA(candles, 5);
     expect(ema).toBeCloseTo(4, 6);
   });
 
-  it('calculates EMA for 10 periods with 10 candles', () => {
+  it('calcula EMA para 10 períodos com 10 candles', () => {
     const candles = generateCandles(10);
     const ema = calculateEMA(candles, 10);
     expect(ema).toBeCloseTo(5.5, 6);
   });
 
-  it('calculates EMA for 10 periods with 11 candles', () => {
+  it('calcula EMA para 10 períodos com 11 candles', () => {
     const candles = generateCandles(11);
     const ema = calculateEMA(candles, 10);
     expect(ema).toBeCloseTo(6.5, 6);
   });
 
-  it('calculates EMA for 15 periods with 15 candles', () => {
+  it('calcula EMA para 15 períodos com 15 candles', () => {
     const candles = generateCandles(15);
     const ema = calculateEMA(candles, 15);
     expect(ema).toBeCloseTo(8, 6);
   });
 
-  it('calculates EMA for 15 periods with 16 candles', () => {
+  it('calcula EMA para 15 períodos com 16 candles', () => {
     const candles = generateCandles(16);
     const ema = calculateEMA(candles, 15);
     expect(ema).toBeCloseTo(9, 6);
   });
 
-  it('calculates EMA for 20 periods with 20 candles', () => {
+  it('calcula EMA para 20 períodos com 20 candles', () => {
     const candles = generateCandles(20);
     const ema = calculateEMA(candles, 20);
     expect(ema).toBeCloseTo(10.5, 6);
   });
 
-  it('calculates EMA for 20 periods with 21 candles', () => {
+  it('calcula EMA para 20 períodos com 21 candles', () => {
     const candles = generateCandles(21);
     const ema = calculateEMA(candles, 20);
     expect(ema).toBeCloseTo(11.5, 6);
   });
 
   // Testes de casos de borda
-  it('returns undefined for empty candles array', () => {
+  it('retorna undefined para array de candles vazio', () => {
     const candles: Candle[] = [];
     const ema = calculateEMA(candles, 5);
     expect(ema).toBeUndefined();

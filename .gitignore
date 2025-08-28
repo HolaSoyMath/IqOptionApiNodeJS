@@ -70,3 +70,4 @@ prisma/migrations/
 *.tsbuildinfo
 
 *.zip
+*.docx

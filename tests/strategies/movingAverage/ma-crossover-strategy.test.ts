@@ -20,13 +20,13 @@ function generateCandles(count: number, startClose: number = 1, increment: numbe
   }));
 }
 
-describe('MA Crossover Strategy Function', () => {
+describe('Testes da Função de Estratégia MA Crossover', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('maCrossoverStrategy', () => {
-    it('calls checkMA2Crossover for 2ma strategy', () => {
+  describe('Testes da Estratégia maCrossoverStrategy', () => {
+    it('chama checkMA2Crossover para estratégia 2ma', () => {
       const candles = generateCandles(10);
       (calculateEMA as jest.Mock)
         .mockReturnValueOnce(1.8) // shortEMA atual
@@ -43,7 +43,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(signal).toBe('BUY');
     });
 
-    it('calls checkMA3Crossover for 3ma strategy', () => {
+    it('chama checkMA3Crossover para estratégia 3ma', () => {
       const candles = generateCandles(15);
       (calculateEMA as jest.Mock)
         .mockReturnValue(1.5); // Todas as EMAs iguais para HOLD
@@ -58,7 +58,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(signal).toBe('HOLD');
     });
 
-    it('returns HOLD for 3ma strategy without midPeriod', () => {
+    it('retorna HOLD para estratégia 3ma sem midPeriod', () => {
       const candles = generateCandles(10);
       
       const signal = maCrossoverStrategy(candles, {
@@ -70,7 +70,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(signal).toBe('HOLD');
     });
 
-    it('returns HOLD for invalid strategy type', () => {
+    it('retorna HOLD para tipo de estratégia inválido', () => {
       const candles = generateCandles(10);
       
       const signal = maCrossoverStrategy(candles, {
@@ -83,13 +83,13 @@ describe('MA Crossover Strategy Function', () => {
     });
   });
 
-  describe('Error Handling Tests', () => {
+  describe('Testes de Tratamento de Erros', () => {
     beforeEach(() => {
       jest.clearAllMocks();
       jest.resetAllMocks();
     });
 
-    it('checkMA2Crossover should return HOLD when calculateEMA throws an error', () => {
+    it('checkMA2Crossover deve retornar HOLD quando calculateEMA lança um erro', () => {
       const candles = generateCandles(15);
       
       // Mock calculateEMA para lançar um erro
@@ -107,7 +107,7 @@ describe('MA Crossover Strategy Function', () => {
       consoleSpy.mockRestore();
     });
 
-    it('checkMA3Crossover should return HOLD when calculateEMA throws an error', () => {
+    it('checkMA3Crossover deve retornar HOLD quando calculateEMA lança um erro', () => {
       const candles = generateCandles(25);
       
       // Mock calculateEMA para lançar um erro
@@ -126,14 +126,14 @@ describe('MA Crossover Strategy Function', () => {
     });
   });
 
-  describe('checkMA3Crossover error handling', () => {
+  describe('Testes de tratamento de erros do checkMA3Crossover', () => {
     beforeEach(() => {
       // Limpar completamente todos os mocks antes de cada teste
       jest.clearAllMocks();
       jest.resetAllMocks();
     });
 
-    it('returns HOLD when EMA calculation throws error', () => {
+    it('retorna HOLD quando o cálculo de EMA lança erro', () => {
       const candles = generateCandles(15);
       (calculateEMA as jest.Mock).mockImplementation(() => {
         throw new Error('EMA calculation failed');
@@ -143,7 +143,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(signal).toBe('HOLD');
     });
 
-    it('returns BUY for ascending EMA alignment (ema1 > ema2 > ema3)', () => {
+    it('retorna BUY para alinhamento ascendente de EMA (ema1 > ema2 > ema3)', () => {
       const candles = generateCandles(25);
       
       
@@ -171,7 +171,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(calculateEMA).toHaveBeenCalledWith(candles, 20);
     });
 
-    it('returns SELL for descending EMA alignment (ema1 < ema2 < ema3)', () => {
+    it('retorna SELL para alinhamento descendente de EMA (ema1 < ema2 < ema3)', () => {
       const candles = generateCandles(25);
       
       
@@ -199,7 +199,7 @@ describe('MA Crossover Strategy Function', () => {
       expect(calculateEMA).toHaveBeenCalledWith(candles, 20);
     });
 
-    it('returns HOLD for mixed EMA alignment', () => {
+    it('retorna HOLD para alinhamento misto de EMA', () => {
       const candles = generateCandles(15);
       
       // Mock para cenário HOLD (sem ordem específica)

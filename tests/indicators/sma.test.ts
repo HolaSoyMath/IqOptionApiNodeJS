@@ -1,7 +1,7 @@
 import { Candle } from '../../src/types/candle.types';
 import { calculateSMA } from '../../src/indicators';
 
-describe('Simple Moving Average (SMA)', () => {
+describe('Testes da Média Móvel Simples (SMA)', () => {
   // Função auxiliar para gerar candles
   function generateCandles(count: number, startClose: number = 1): Candle[] {
     return Array.from({ length: count }, (_, i) => ({
@@ -17,13 +17,13 @@ describe('Simple Moving Average (SMA)', () => {
     }));
   }
 
-  it('returns undefined when not enough candles for SMA period', () => {
+  it('retorna undefined quando não há candles suficientes para o período SMA', () => {
     const candles = generateCandles(2);
     const sma = calculateSMA(candles, 3);
     expect(sma).toBeUndefined();
   });
 
-  it('calculates SMA for 3 periods correctly', () => {
+  it('calcula SMA para 3 períodos corretamente', () => {
     const candles = generateCandles(3);
     // Valores de close: [1.0, 1.1, 1.2]
     // SMA = (1.0 + 1.1 + 1.2) / 3 = 1.1
@@ -31,7 +31,7 @@ describe('Simple Moving Average (SMA)', () => {
     expect(sma).toBeCloseTo(1.1, 6);
   });
 
-  it('calculates SMA for 5 periods correctly', () => {
+  it('calcula SMA para 5 períodos corretamente', () => {
     const candles = generateCandles(5);
     // Valores de close: [1.0, 1.1, 1.2, 1.3, 1.4]
     // SMA = (1.0 + 1.1 + 1.2 + 1.3 + 1.4) / 5 = 1.2
@@ -39,7 +39,7 @@ describe('Simple Moving Average (SMA)', () => {
     expect(sma).toBeCloseTo(1.2, 6);
   });
 
-  it('calculates SMA for 10 periods correctly', () => {
+  it('calcula SMA para 10 períodos corretamente', () => {
     const candles = generateCandles(10);
     // Valores de close: [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]
     // SMA = (1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 1.6 + 1.7 + 1.8 + 1.9) / 10 = 1.45
@@ -47,7 +47,7 @@ describe('Simple Moving Average (SMA)', () => {
     expect(sma).toBeCloseTo(1.45, 6);
   });
 
-  it('calculates SMA for 20 periods correctly', () => {
+  it('calcula SMA para 20 períodos corretamente', () => {
     const candles = generateCandles(20);
     // Valores de close: [1.0, 1.1, 1.2, ..., 2.9]
     // SMA = (1.0 + 1.1 + ... + 2.9) / 20
@@ -57,7 +57,7 @@ describe('Simple Moving Average (SMA)', () => {
     expect(sma).toBeCloseTo(1.95, 6);
   });
 
-  it('calculates SMA correctly with more candles than period', () => {
+  it('calcula SMA corretamente com mais candles que o período', () => {
     const candles = generateCandles(10); // 10 candles
     // SMA deve considerar apenas os últimos 5 candles
     // Últimos 5 valores de close: [1.5, 1.6, 1.7, 1.8, 1.9]
@@ -66,7 +66,7 @@ describe('Simple Moving Average (SMA)', () => {
     expect(sma).toBeCloseTo(1.7, 6);
   });
 
-  it('calculates SMA correctly with decimal values', () => {
+  it('calcula SMA corretamente com valores decimais', () => {
     const candles: Candle[] = [
       { id: '1', symbol: 'EURUSD', timeframe: '1m', timestamp: 1629871200, open: 1.123456, high: 1.2, low: 1.0, close: 1.111111, createdAt: new Date() },
       { id: '2', symbol: 'EURUSD', timeframe: '1m', timestamp: 1629871260, open: 1.2, high: 1.3, low: 1.1, close: 1.222222, createdAt: new Date() },

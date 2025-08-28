@@ -12,6 +12,8 @@ import ordersRoutes from "./routes/orders.routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { config } from "./config/app.config";
 import { Logger } from "./utils/logger";
+import { configRoutes } from './routes/config.routes';
+import candleRoutes from './routes/candle.routes';
 
 class App {
   public app: Express;
@@ -55,10 +57,12 @@ class App {
 
     // API routes
     this.app.use("/api/auth", authRoutes);
-    this.app.use("/api/markets", marketRoutes);
-    this.app.use("/api/candles", candlesRoutes);
     this.app.use("/api/account", accountRoutes);
+    this.app.use("/api/market", marketRoutes);
+    this.app.use("/api/candle", candleRoutes);
+    this.app.use("/api/candles", candlesRoutes);
     this.app.use("/api/orders", ordersRoutes);
+    this.app.use("/api/config", configRoutes);
 
     // Root endpoint
     this.app.get("/", (req, res) => {
@@ -70,10 +74,12 @@ class App {
         endpoints: {
           health: "/health",
           auth: "/api/auth",
-          markets: "/api/markets",
-          candles: "/api/candles",
           account: "/api/account",
+          market: "/api/market",
+          candle: "/api/candle",
+          candles: "/api/candles",
           orders: "/api/orders",
+          config: "/api/config",
         },
       });
     });
@@ -96,10 +102,12 @@ class App {
         availableEndpoints: {
           health: "/health",
           auth: "/api/auth",
-          markets: "/api/markets",
-          candles: "/api/candles",
           account: "/api/account",
+          market: "/api/market",
+          candle: "/api/candle",
+          candles: "/api/candles",
           orders: "/api/orders",
+          config: "/api/config",
           docs: "/api-docs",
         },
       });

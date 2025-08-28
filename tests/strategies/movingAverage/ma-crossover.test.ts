@@ -19,9 +19,9 @@ function generateCandles(count: number, startClose: number = 1, increment: numbe
   }));
 }
 
-describe('MA Crossover Strategy - 2 MAs', () => {
+describe('Testes da Estratégia MA Crossover - 2 MAs', () => {
   // Teste BUY - EMA curta cruza de baixo para cima
-  it('returns BUY signal when short MA crosses above long MA', () => {
+  it('retorna sinal BUY quando MA curta cruza acima da MA longa', () => {
     const candles: Candle[] = [
       // Fase 1: EMA curta abaixo da longa (estabelecer posição inicial)
       { id: '1', symbol: 'EURUSD', timeframe: '1m', close: 1.0, open: 1.0, high: 1.0, low: 1.0, timestamp: 1672531200, createdAt: new Date('2023-01-01T00:00:00Z') },
@@ -45,7 +45,7 @@ describe('MA Crossover Strategy - 2 MAs', () => {
   });
   
   // Teste SELL - EMA curta cruza de cima para baixo
-  it('returns SELL signal when short MA crosses below long MA', () => {
+  it('retorna sinal SELL quando MA curta cruza abaixo da MA longa', () => {
     const candles: Candle[] = [
       // Fase 1: Estabelecer EMA longa alta e EMA curta ainda mais alta
       { id: '1', symbol: 'EURUSD', timeframe: '1m', close: 1.0, open: 1.0, high: 1.0, low: 1.0, timestamp: 1672531200, createdAt: new Date('2023-01-01T00:00:00Z') },
@@ -72,68 +72,42 @@ describe('MA Crossover Strategy - 2 MAs', () => {
     const previousCandles = candles.slice(0, -1);
     const previousShortEMA = calculateEMA(previousCandles, 3);
     const previousLongEMA = calculateEMA(previousCandles, 8);
-    
-    console.log('=== DEBUG TESTE SELL ===');
-    console.log('Candles length:', candles.length);
-    console.log('Current Short EMA:', currentShortEMA);
-    console.log('Current Long EMA:', currentLongEMA);
-    console.log('Previous Short EMA:', previousShortEMA);
-    console.log('Previous Long EMA:', previousLongEMA);
-    
-    if (currentShortEMA !== undefined && currentLongEMA !== undefined && 
-        previousShortEMA !== undefined && previousLongEMA !== undefined) {
-      
-      const previousDiff = previousShortEMA - previousLongEMA;
-      const currentDiff = currentShortEMA - currentLongEMA;
-      
-      console.log('Previous Diff (short - long):', previousDiff);
-      console.log('Current Diff (short - long):', currentDiff);
-      console.log('Condição SELL (previousDiff > 0 && currentDiff < 0):', previousDiff > 0 && currentDiff < 0);
-    } else {
-      console.log('ERRO: Algumas EMAs são undefined');
-      console.log('currentShortEMA:', currentShortEMA);
-      console.log('currentLongEMA:', currentLongEMA);
-      console.log('previousShortEMA:', previousShortEMA);
-      console.log('previousLongEMA:', previousLongEMA);
-    }
-    console.log('========================');
   
     const signal = checkMA2Crossover(candles, 3, 8);
-    console.log('Signal returned:', signal);
     expect(signal).toBe('SELL');
   });
 
-  it('returns HOLD signal when no crossover occurs', () => {
+  it('retorna sinal HOLD quando não ocorre cruzamento', () => {
     const candles = generateCandles(10, 1.5, 0);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('HOLD');
   });
 
-  it('returns HOLD when not enough candles for calculation', () => {
+  it('retorna HOLD quando não há candles suficientes para cálculo', () => {
     const candles = generateCandles(5);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('HOLD');
   });
 
-  it('returns HOLD when EMAs are equal', () => {
+  it('retorna HOLD quando EMAs são iguais', () => {
     const candles = generateCandles(10, 1.0, 0);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('HOLD');
   });
 
-  it('returns BUY when exactly enough candles and short EMA > long EMA', () => {
+  it('retorna BUY quando há exatamente candles suficientes e EMA curta > EMA longa', () => {
     const candles = generateCandles(8, 1.0, 0.15);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('BUY');
   });
 
-  it('returns SELL when exactly enough candles and short EMA < long EMA', () => {
+  it('retorna SELL quando há exatamente candles suficientes e EMA curta < EMA longa', () => {
     const candles = generateCandles(8, 2.0, -0.15);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('SELL');
   });
 
-  it('returns HOLD when exactly enough candles and short EMA == long EMA', () => {
+  it('retorna HOLD quando há exatamente candles suficientes e EMA curta == EMA longa', () => {
     const candles = generateCandles(8, 1.5, 0);
     const signal = checkMA2Crossover(candles, 3, 8);
     expect(signal).toBe('HOLD');

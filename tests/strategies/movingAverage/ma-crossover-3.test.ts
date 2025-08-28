@@ -18,32 +18,32 @@ function generateCandles(count: number, startClose: number = 1, increment: numbe
   }));
 }
 
-describe('MA Crossover Strategy - 3 MAs', () => {
-  it('returns BUY signal when all MAs are aligned upward', () => {
+describe('Testes da Estratégia MA Crossover - 3 MAs', () => {
+  it('retorna sinal BUY quando todas as MAs estão alinhadas para cima', () => {
     const candles = generateCandles(25, 1.0, 0.15);
     const signal = checkMA3Crossover(candles, 5, 10, 20);
     expect(signal).toBe('BUY');
   });
 
-  it('returns SELL signal when all MAs are aligned downward', () => {
+  it('retorna sinal SELL quando todas as MAs estão alinhadas para baixo', () => {
     const candles = generateCandles(25, 2.5, -0.15);
     const signal = checkMA3Crossover(candles, 5, 10, 20);
     expect(signal).toBe('SELL');
   });
 
-  it('returns HOLD signal when MAs are not properly aligned', () => {
+  it('retorna sinal HOLD quando MAs não estão adequadamente alinhadas', () => {
     const candles = generateCandles(10, 1.5, 0);
     const signal = checkMA3Crossover(candles, 5, 10, 20);
     expect(signal).toBe('HOLD');
   });
 
-  it('returns HOLD when not enough candles for calculation', () => {
+  it('retorna HOLD quando não há candles suficientes para cálculo', () => {
     const candles = generateCandles(15);
     const signal = checkMA3Crossover(candles, 5, 10, 20);
     expect(signal).toBe('HOLD');
   });
 
-  it('returns HOLD when only two MAs are aligned', () => {
+  it('retorna HOLD quando apenas duas MAs estão alinhadas', () => {
     const candles: Candle[] = [
       { id: '1', symbol: 'EURUSD', timeframe: '1m', timestamp: 1629871200, open: 1.0, high: 1.1, low: 0.9, close: 1.0, volume: 1000, createdAt: new Date(1629871200 * 1000) },
       { id: '2', symbol: 'EURUSD', timeframe: '1m', timestamp: 1629871260, open: 1.0, high: 1.2, low: 0.9, close: 1.1, volume: 1000, createdAt: new Date(1629871260 * 1000) },

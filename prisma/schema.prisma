@@ -102,3 +102,19 @@ model Order {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model Config {
+  id                  Int      @id @default(1) // Garantir ID fixo
+  autoConnect         Boolean  @default(false)
+  defaultEntryValue   Float    @default(5.0)
+  maxOperationsPerDay Int      @default(50)
+  stopLoss            Float    @default(0)
+  stopGain            Float    @default(0)
+  stopLossEnabled     Boolean  @default(false)
+  stopGainEnabled     Boolean  @default(false)
+  notifications       Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("configs")
+}
