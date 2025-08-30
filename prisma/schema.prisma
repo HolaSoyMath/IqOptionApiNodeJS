@@ -116,8 +116,11 @@ model Order {
   payoutPercent Float?
   entryPrice    Float?
   closePrice    Float?
+  iqOptionId    String?    
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@map("orders")
 }
 
 model Config {
