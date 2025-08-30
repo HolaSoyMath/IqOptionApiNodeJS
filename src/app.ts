@@ -14,6 +14,7 @@ import { config } from "./config/app.config";
 import { Logger } from "./utils/logger";
 import { configRoutes } from './routes/config.routes';
 import candleRoutes from './routes/candle.routes';
+import { strategyRoutes } from './routes/strategy.routes';
 
 class App {
   public app: Express;
@@ -63,6 +64,7 @@ class App {
     this.app.use("/api/candles", candlesRoutes);
     this.app.use("/api/orders", ordersRoutes);
     this.app.use("/api/config", configRoutes);
+    this.app.use("/api/strategies", strategyRoutes);
 
     // Root endpoint
     this.app.get("/", (req, res) => {

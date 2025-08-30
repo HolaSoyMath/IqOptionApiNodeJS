@@ -20,12 +20,7 @@ enum Status {
   open
 }
 
-enum StopGainType {
-  percentage
-  value
-}
-
-enum StopLossType {
+enum StopType {
   percentage
   value
 }
@@ -67,21 +62,43 @@ model Session {
 }
 
 model Strategy {
-  id              Int            @id @default(autoincrement())
-  name            String
-  status          Status         // "active" | "inactive"
-  entryValue      Float
-  accountType     AccountType    // "real" | "demo"
-  stopGainType    StopGainType   // "percentage" | "value"
-  stopGainValue   Float 
-  stopLossType    StopLossType   // "percentage" | "value"
-  stopLossValue   Float
-  accuracyRate    Float?
-  totalProfit     Float?
-  operationCount  Int?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  orders          Order[]
+  id                  Int      @id
+  name                String   @unique
+  description         String?
+  isActive            Status  @default(inactive)
+  
+  // Configurações de valor e conta
+  entryValue          Float    @default(5.0)
+  accountType         AccountType   @default(demo)
+  
+  // Configurações de Stop Gain
+  stopGainType        StopType?  @default(value) // "percentage" ou "value"
+  stopGainValue       Float?   @default(0)
+  stopGainEnabled     Boolean  @default(false)
+  dailyResetGain      Boolean  @default(true) // Reset à meia-noite
+  
+  // Configurações de Stop Loss
+  stopLossType        StopType?  @default(value) // "percentage" ou "value"
+  stopLossValue       Float?   @default(0)
+  stopLossEnabled     Boolean  @default(false)
+  dailyResetLoss      Boolean  @default(true) // Reset à meia-noite
+  
+  // Valores de controle para stops
+  currentDayProfit    Float?   @default(0) // Lucro/prejuízo do dia (reseta se configurado)
+  stopBaseBalance     Float?   // Saldo base para cálculo de %
+  lastResetDate       DateTime? // Última vez que foi resetado
+  stopHitDate         DateTime? // Quando atingiu stop (se não tem reset)
+  
+  // Métricas históricas (nunca resetam)
+  accuracyRate        Float?   @default(0)
+  totalProfit         Float?   @default(0) // Lucro/prejuízo TOTAL histórico
+  operationCount      Int?     @default(0)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  orders              Order[]
+  
+  @@map("strategies")
 }
 
 model Order {

@@ -13,6 +13,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "keywords": [
     "iqoption",
     "trading",
