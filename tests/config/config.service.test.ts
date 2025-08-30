@@ -178,13 +178,10 @@ describe('Testes do ConfigService', () => {
         defaultEntryValue: -1
       };
 
-      console.log('🔍 DEBUG: Testando defaultEntryValue negativo:', invalidData.defaultEntryValue);
       
       try {
         const result = await ConfigService.updateConfig(invalidData);
-        console.log('❌ DEBUG: Teste deveria ter falhado, mas retornou:', result);
       } catch (error) {
-        console.log('✅ DEBUG: Erro capturado como esperado:', (error as Error).message);
       }
 
       await expect(ConfigService.updateConfig(invalidData))
@@ -247,25 +244,20 @@ describe('Testes do ConfigService', () => {
     const validData = { defaultEntryValue: 1 };
     const expectedConfig = { id: 1, ...validData, createdAt: new Date(), updatedAt: new Date() };
     
-    console.log('🔍 DEBUG: Testando defaultEntryValue no limite mínimo:', validData.defaultEntryValue);
     
     mockPrisma.config.upsert.mockResolvedValue(expectedConfig);
     
     const result = await ConfigService.updateConfig(validData);
-    console.log('✅ DEBUG: Resultado do teste de limite mínimo:', result.defaultEntryValue);
     expect(result.defaultEntryValue).toBe(1);
   });
 
   it('deve rejeitar defaultEntryValue abaixo do limite mínimo (0.5)', async () => {
     const invalidData = { defaultEntryValue: 0.5 };
     
-    console.log('🔍 DEBUG: Testando defaultEntryValue abaixo do limite:', invalidData.defaultEntryValue);
     
     try {
       const result = await ConfigService.updateConfig(invalidData);
-      console.log('❌ DEBUG: Teste deveria ter falhado, mas retornou:', result);
     } catch (error) {
-      console.log('✅ DEBUG: Erro capturado como esperado:', (error as Error).message);
     }
     
     await expect(ConfigService.updateConfig(invalidData))
