@@ -15,6 +15,8 @@ import { Logger } from "./utils/logger";
 import { configRoutes } from './routes/config.routes';
 import candleRoutes from './routes/candle.routes';
 import { strategyRoutes } from './routes/strategy.routes';
+import { IQSocketService } from './services/iqsocket.service';
+import { OrderListenerService } from './services/orderListener.service';
 
 class App {
   public app: Express;
@@ -27,6 +29,7 @@ class App {
     this.initializeRoutes();
     this.initializeSwagger();
     this.initializeErrorHandling();
+    this.initializeServices();
   }
 
   private initializeMiddlewares(): void {
@@ -114,6 +117,13 @@ class App {
         },
       });
     });
+  }
+
+  private initializeServices(): void {
+    // Inicializar OrderListenerService com IQSocketService
+    const iqSocket = IQSocketService.getInstance();
+    OrderListenerService.initialize(iqSocket);
+    Logger.info("APP", "📡 OrderListenerService inicializado com sucesso");
   }
 
   public start(): void {

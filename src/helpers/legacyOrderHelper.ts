@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { IQWSClient } from "../services/iq/ws-client";
 
-export class TestOrderController {
+export class LegacyOrderHelper {
   // Cache para clientes WebSocket
   private static clientCache = new Map<
     string,
@@ -10,11 +10,8 @@ export class TestOrderController {
   private static readonly CACHE_TTL = 60000; // 60 segundos
 
   private static async getWSClient(ssid: string): Promise<IQWSClient> {
-    const cached = TestOrderController.clientCache.get(ssid);
-    if (
-      cached &&
-      Date.now() - cached.timestamp < TestOrderController.CACHE_TTL
-    ) {
+    const cached = LegacyOrderHelper.clientCache.get(ssid);
+    if (cached && Date.now() - cached.timestamp < LegacyOrderHelper.CACHE_TTL) {
       if (cached.client.isConnected()) {
         return cached.client;
       }
@@ -27,7 +24,7 @@ export class TestOrderController {
     });
 
     await client.connect();
-    TestOrderController.clientCache.set(ssid, {
+    LegacyOrderHelper.clientCache.set(ssid, {
       client,
       timestamp: Date.now(),
     });
@@ -171,10 +168,10 @@ export class TestOrderController {
       }
 
       // Obter cliente WebSocket
-      const wsClient = await TestOrderController.getWSClient(ssid);
+      const wsClient = await LegacyOrderHelper.getWSClient(ssid);
 
       // Calcular expiração correta (próximo minuto + 1 minuto)
-      const expired = TestOrderController.calculateExpirationTimestamp();
+      const expired = LegacyOrderHelper.calculateExpirationTimestamp();
 
       // Verificar se a expiração está no futuro
       const now = Math.floor(Date.now() / 1000);
@@ -193,14 +190,14 @@ export class TestOrderController {
       }
 
       // Construir instrument_id
-      const instrumentId = TestOrderController.buildInstrumentId(
+      const instrumentId = LegacyOrderHelper.buildInstrumentId(
         activeId,
         expired,
         direction
       );
 
       // Calcular value
-      const value = TestOrderController.calculateValue(expired);
+      const value = LegacyOrderHelper.calculateValue(expired);
 
       // Payload da ordem usando parâmetros dinâmicos
       const orderBody = {

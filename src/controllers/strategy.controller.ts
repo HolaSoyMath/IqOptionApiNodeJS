@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AppError } from '../errors/custom-errors';
 import { Logger } from '../utils/logger';
-import { StrategyService } from '@/services/strategy.service';
+import { StrategyService } from '../services/strategy.service';
 
 export class StrategyController {
   /**
